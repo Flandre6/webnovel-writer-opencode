@@ -20,7 +20,10 @@ import time
 from copy import deepcopy
 from pathlib import Path
 
-from runtime_compat import enable_windows_utf8_stdio
+try:
+    from ..runtime_compat import enable_windows_utf8_stdio
+except ImportError:
+    from runtime_compat import enable_windows_utf8_stdio
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field, asdict
 from datetime import datetime

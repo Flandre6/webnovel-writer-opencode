@@ -19,13 +19,31 @@
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 安装
 
 ```bash
-pip install -r requirements.txt
+# 从 PyPI 安装
+pip install webnovel-writer
+
+# 或从源码安装
+pip install -e .
 ```
 
-### 2. 配置 OpenCode Skills
+### 2. 使用 CLI
+
+```bash
+# 初始化项目
+webnovel init "我的小说" --genre "修仙"
+
+# 查看帮助
+webnovel --help
+
+# 其他命令
+webnovel where          # 查看当前项目路径
+webnovel index stats    # 查看索引统计
+```
+
+### 3. 配置 OpenCode Skills
 
 将 `skills` 目录复制到 OpenCode 配置目录：
 
@@ -37,7 +55,7 @@ cp -r webnovel-writer/skills <your-project>/.opencode/skills/webnovel-writer
 cp -r webnovel-writer/skills ~/.config/opencode/skills/webnovel-writer
 ```
 
-### 3. 配置 OpenCode Agents（可选）
+### 4. 配置 OpenCode Agents（可选）
 
 ```bash
 # 方式一：项目级安装
@@ -47,7 +65,7 @@ cp -r webnovel-writer/agents <your-project>/.opencode/agents/
 cp -r webnovel-writer/agents ~/.config/opencode/agents/
 ```
 
-### 4. 配置 RAG 环境
+### 5. 配置 RAG 环境
 
 在项目根目录创建 `.env` 文件：
 
@@ -61,37 +79,25 @@ RERANK_MODEL=jina-reranker-v3
 RERANK_API_KEY=your_api_key
 ```
 
-### 5. 使用 CLI
-
-```bash
-# 进入项目目录
-cd <your-novel-project>
-
-# 查看帮助
-python webnovel-writer/scripts/webnovel.py --help
-
-# 初始化项目
-python webnovel-writer/scripts/webnovel.py init
-```
-
 ## 项目结构
 
 ```
 webnovel-writer/
-├── webnovel-writer/              # 主代码目录
+├── webnovel-writer/              # 主代码目录（pip 包内容）
 │   ├── scripts/                 # Python 核心脚本
 │   │   ├── data_modules/       # 数据模块
-│   │   └── webnovel.py        # CLI 入口
+│   │   └── webnovel.py       # CLI 入口
 │   ├── skills/                 # OpenCode Skills
 │   ├── agents/                 # OpenCode Agents
-│   ├── dashboard/               # 可视化面板
-│   ├── references/              # 共享参考
-│   ├── templates/              # 模板
-│   └── genres/                 # 题材参考
-├── docs/                        # 文档
-├── pytest.ini                   # 测试配置
-├── requirements.txt            # Python 依赖
-└── README.md                   # 本文件
+│   ├── dashboard/              # 可视化面板
+│   ├── references/             # 共享参考
+│   ├── templates/             # 模板
+│   └── genres/                # 题材参考
+├── docs/                       # 文档
+├── pyproject.toml              # Python 包配置
+├── pytest.ini                  # 测试配置
+├── README.md                   # 本文件
+└── LICENSE                     # 开源协议
 ```
 
 ## Skills

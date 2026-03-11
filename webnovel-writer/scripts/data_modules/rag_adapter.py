@@ -18,7 +18,10 @@ import logging
 import shutil
 from pathlib import Path
 
-from runtime_compat import enable_windows_utf8_stdio
+try:
+    from ..runtime_compat import enable_windows_utf8_stdio
+except ImportError:
+    from runtime_compat import enable_windows_utf8_stdio
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 from collections import Counter

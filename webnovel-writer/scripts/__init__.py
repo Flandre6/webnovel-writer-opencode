@@ -11,9 +11,11 @@ __author__ = "褚山真寻"
 from . import security_utils
 from . import project_locator
 from . import chapter_paths
+from . import runtime_compat
 
 __all__ = [
     "security_utils",
     "project_locator",
     "chapter_paths",
+    "runtime_compat",
 ]

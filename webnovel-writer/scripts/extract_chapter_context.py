@@ -22,7 +22,13 @@ from typing import Any, Dict, List
 
 from chapter_outline_loader import load_chapter_outline
 
-from runtime_compat import enable_windows_utf8_stdio
+try:
+    from .runtime_compat import
+except ImportError:
+    try:
+    from .runtime_compat import enable_windows_utf8_stdio
+except ImportError:
+    from runtime_compat import enable_windows_utf8_stdio
 
 try:
     from chapter_paths import find_chapter_file

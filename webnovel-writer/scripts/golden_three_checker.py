@@ -27,7 +27,13 @@ import json
 import argparse
 from pathlib import Path
 
-from runtime_compat import enable_windows_utf8_stdio
+try:
+    from .runtime_compat import
+except ImportError:
+    try:
+    from .runtime_compat import enable_windows_utf8_stdio
+except ImportError:
+    from runtime_compat import enable_windows_utf8_stdio
 from typing import Dict, List, Optional, Any
 
 # 导入项目定位和章节路径模块

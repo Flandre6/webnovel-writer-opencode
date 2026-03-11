@@ -50,7 +50,13 @@ import argparse
 import shutil
 from pathlib import Path
 
-from runtime_compat import enable_windows_utf8_stdio
+try:
+    from .runtime_compat import
+except ImportError:
+    try:
+    from .runtime_compat import enable_windows_utf8_stdio
+except ImportError:
+    from runtime_compat import enable_windows_utf8_stdio
 from datetime import datetime
 from typing import Dict, Any, Optional
 

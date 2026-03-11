@@ -22,7 +22,10 @@ _scripts_dir = Path(__file__).resolve().parent
 if str(_scripts_dir) not in sys.path:
     sys.path.insert(0, str(_scripts_dir))
 
-from runtime_compat import enable_windows_utf8_stdio
+try:
+    from .runtime_compat import enable_windows_utf8_stdio
+except ImportError:
+    from runtime_compat import enable_windows_utf8_stdio
 
 
 def main() -> None:
