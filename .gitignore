@@ -1,48 +1,39 @@
-.claude/settings.local.json
-webnovel-writer-原版/
-
-# Python caches & virtualenv
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+
+# Test artifacts
 .pytest_cache/
 .coverage
 htmlcov/
-.venv/
-venv/
 
-# Local runtime data
-.webnovel/
-
-# OS / editor
+# OS
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
 
-# Workspace artifacts
-node_modules/
-.npm-cache/
-dist/
-!webnovel-writer/dashboard/frontend/dist/
-!webnovel-writer/dashboard/frontend/dist/**
-nul
-.tmp/
-.tmp_*
-.tmp_outline_check/
+# Temp
+*.tmp
+*.temp
+.ace-tool/
 
-# Local research / sibling projects (avoid accidental commit)
-.sisyphus/
-De-AI-Prompt/
-MuMuAINovel/
-hapi-tool/
-ai-writing-knowledge/
-novel/
-novel-refined/
+# Workspace pointer (local only)
+.webnovel-current-project
 
-# Local analysis snapshots and draft docs
-PROJECT_MINDMAP*.md
-webnovel-writer-v5*-architecture.svg
-_v52_*.json
-_v52_*.txt
-claude_inventory.csv
-*_utf8_sample.txt
+# Local test scratch (do not commit)
+scripts/.tmp_pytest/
+scripts/.tmp_pytest_manual/
+scripts/zzz_test.db*
+
+# OpenCode
+.opencode/
+!.opencode/.gitkeep
