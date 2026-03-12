@@ -2,20 +2,22 @@
 
 ## 目录层级（真实运行）
 
-在 Claude Code + Marketplace 安装下，至少有 4 层概念：
+在 OpenCode 安装下，有以下几层概念：
 
-1. `WORKSPACE_ROOT`（Claude 工作区根，通常是 `${CLAUDE_PROJECT_DIR}`）
-2. `WORKSPACE_ROOT/.claude/`（工作区级指针与配置）
+1. `WORKSPACE_ROOT`（OpenCode 工作区根，通常是项目目录）
+2. `WORKSPACE_ROOT/.opencode/`（OpenCode 配置与资源目录）
 3. `PROJECT_ROOT`（真实小说项目根，`/webnovel-init` 按书名创建）
-4. `CLAUDE_PLUGIN_ROOT`（插件缓存目录，不在项目内）
 
-### A) Workspace 目录（含 `.claude`）
+### A) Workspace 目录（含 `.opencode`）
 
 ```text
 workspace-root/
-├── .claude/
-│   ├── .webnovel-current-project   # 指向当前小说项目根
-│   └── settings.json
+├── .opencode/
+│   ├── skills/           # Skills 目录
+│   ├── scripts/          # Python 脚本
+│   ├── references/       # 参考文档
+│   ├── genres/           # 题材参考
+│   └── templates/        # 模板
 ├── 小说A/
 ├── 小说B/
 └── ...
@@ -31,16 +33,24 @@ project-root/
 └── 设定集/                # 世界观、角色、力量体系
 ```
 
-## 插件目录（Marketplace 安装）
+## OpenCode 目录结构
 
-插件不在小说项目目录内，而在 Claude 插件缓存目录。运行时统一用 `CLAUDE_PLUGIN_ROOT` 引用：
+安装后 `.opencode/` 目录结构如下：
 
 ```text
-${CLAUDE_PLUGIN_ROOT}/
+.opencode/
 ├── skills/
-├── agents/
+│   └── webnovel-init/
+│   └── webnovel-plan/
+│   └── webnovel-write/
+│   └── ...
 ├── scripts/
-└── references/
+│   ├── webnovel.py
+│   ├── data_modules/
+│   └── ...
+├── references/
+├── genres/
+└── templates/
 ```
 
 ### C) 用户级全局映射（兜底）
@@ -65,8 +75,8 @@ ${CLAUDE_HOME:-~/.claude}/webnovel-writer/workspaces.json
 统一前置（手动 CLI 场景）：
 
 ```bash
-export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
-export SCRIPTS_DIR="${CLAUDE_PLUGIN_ROOT}/scripts"
+export WORKSPACE_ROOT="${WEBNOVEL_PROJECT_ROOT:-$PWD}"
+export SCRIPTS_DIR="${WORKSPACE_ROOT}/.opencode/scripts"
 export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
 ```
 
@@ -94,6 +104,6 @@ python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" rag stats
 ### 测试入口
 
 ```bash
-pwsh "${CLAUDE_PLUGIN_ROOT}/scripts/run_tests.ps1" -Mode smoke
-pwsh "${CLAUDE_PLUGIN_ROOT}/scripts/run_tests.ps1" -Mode full
+cd .opencode/scripts
+pytest
 ```

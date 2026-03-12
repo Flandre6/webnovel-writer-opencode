@@ -28,10 +28,10 @@ trigger: webnovel
 # 获取 skill 所在目录的绝对路径
 export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-# 确定包根目录（假设 .agents 在包根目录下）
-export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/.." && pwd)"
+# 确定 .opencode 根目录
+export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/../.." && pwd)"
 
-# WORKSPACE_ROOT：OpenCode 的工作区根目录
+# WORKSPACE_ROOT：工作区根目录
 export WORKSPACE_ROOT="${WEBNOVEL_PROJECT_ROOT:-$PWD}"
 
 # Dashboard 目录
@@ -47,11 +47,11 @@ python -m pip install -r "${DASHBOARD_DIR}/requirements.txt" --quiet
 ### Step 2：解析项目根目录并准备 Python 模块路径
 
 ```bash
-export SCRIPTS_DIR="${WEBNOVEL_ROOT}/webnovel_writer/scripts"
+export SCRIPTS_DIR="${WEBNOVEL_ROOT}/scripts"
 export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
 echo "项目路径: ${PROJECT_ROOT}"
 
-# 确保 `python -m dashboard.server` 可在任意工作目录下找到插件模块
+# 确保 `python -m dashboard.server` 可在任意工作目录下找到模块
 if [ -n "${PYTHONPATH:-}" ]; then
   export PYTHONPATH="${WEBNOVEL_ROOT}:${PYTHONPATH}"
 else

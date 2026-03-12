@@ -47,8 +47,9 @@ trigger: webnovel
 - L2：仅在触发条件满足时加载“条件必读/可选”文件。
 
 路径约定：
-- `references/...` 相对当前 skill 目录。
-- `../../references/...` 指向全局共享参考。
+- `references/...` 相对 `.opencode/` 目录（从 skill 目录出发：`../../references/...`）
+- `templates/...` 相对 `.opencode/` 目录（从 skill 目录出发：`../../templates/...`）
+- `genres/...` 相对 `.opencode/` 目录（从 skill 目录出发：`../../genres/...`）
 
 ## References（逐文件引用清单）
 

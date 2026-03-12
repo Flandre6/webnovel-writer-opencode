@@ -13,7 +13,7 @@ Purpose: refine 总纲 into volume + chapter outlines. Do not redesign the globa
 Setting policy: 先基于 init 产出的总纲+世界观补齐设定集基线；再在卷纲完成后，直接对现有设定集做增量补充。
 
 ## Project Root Guard
-- Claude Code 的“工作区根目录”不一定等于“书项目根目录”。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
+- 工作区根目录不一定等于书项目根目录。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
 - 必须先解析 `PROJECT_ROOT` 为真实书项目根（必须包含 `.webnovel/state.json`），后续所有读写路径都以该目录为准。
 
 环境设置（bash 命令执行前）：
@@ -21,23 +21,20 @@ Setting policy: 先基于 init 产出的总纲+世界观补齐设定集基线；
 # 获取 skill 所在目录的绝对路径
 export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-# 确定包根目录（假设 .agents 在包根目录下）
-export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/.." && pwd)"
+# 确定 .opencode 根目录
+export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/../.." && pwd)"
 
-# SCRIPTS_DIR 相对于包根目录
-export SCRIPTS_DIR="${WEBNOVEL_ROOT}/webnovel_writer/scripts"
+# SCRIPTS_DIR 相对于 .opencode 目录
+export SCRIPTS_DIR="${WEBNOVEL_ROOT}/scripts"
 
-# WORKSPACE_ROOT：OpenCode 的工作区根目录
+# WORKSPACE_ROOT：工作区根目录
 export WORKSPACE_ROOT="${WEBNOVEL_PROJECT_ROOT:-$PWD}"
 
 # 检查必要文件
 if [ ! -f "${SCRIPTS_DIR}/webnovel.py" ]; then
-  # 尝试从环境变量获取
-  if [ -n "$WEBNOVEL_SCRIPTS_DIR" ] && [ -f "${WEBNOVEL_SCRIPTS_DIR}/webnovel.py" ]; then
-    export SCRIPTS_DIR="$WEBNOVEL_SCRIPTS_DIR"
-  else
-    echo "ERROR: 缺少脚本: ${SCRIPTS_DIR}/webnovel.py" >&2
-    echo "提示: 请设置环境变量 WEBNOVEL_SCRIPTS_DIR 指向脚本目录" >&2
+  echo "ERROR: 缺少脚本: ${SCRIPTS_DIR}/webnovel.py" >&2
+  exit 1
+fi
     exit 1
   fi
 fi

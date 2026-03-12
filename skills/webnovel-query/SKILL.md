@@ -11,32 +11,28 @@ trigger: webnovel
 
 ## Project Root Guard（必须先确认）
 
-- Claude Code 的“工作区根目录”不一定等于“书项目根目录”。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
+- 工作区根目录不一定等于书项目根目录。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
 - 必须先解析真实书项目根（必须包含 `.webnovel/state.json`），后续所有读写路径都以该目录为准。
-- **禁止**在插件目录 `${CLAUDE_PLUGIN_ROOT}/` 下读取或写入项目文件
+- **禁止**在 `.opencode/` 目录下读取或写入项目文件
 
 环境设置（bash 命令执行前）：
 ```bash
 # 获取 skill 所在目录的绝对路径
 export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-# 确定包根目录（假设 .agents 在包根目录下）
-export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/.." && pwd)"
+# 确定 .opencode 根目录
+export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/../.." && pwd)"
 
-# SCRIPTS_DIR 相对于包根目录
-export SCRIPTS_DIR="${WEBNOVEL_ROOT}/webnovel_writer/scripts"
+# SCRIPTS_DIR 相对于 .opencode 目录
+export SCRIPTS_DIR="${WEBNOVEL_ROOT}/scripts"
 
-# WORKSPACE_ROOT：OpenCode 的工作区根目录
+# WORKSPACE_ROOT：工作区根目录
 export WORKSPACE_ROOT="${WEBNOVEL_PROJECT_ROOT:-$PWD}"
 
 # 检查必要文件
 if [ ! -f "${SCRIPTS_DIR}/webnovel.py" ]; then
-  if [ -n "$WEBNOVEL_SCRIPTS_DIR" ] && [ -f "${WEBNOVEL_SCRIPTS_DIR}/webnovel.py" ]; then
-    export SCRIPTS_DIR="$WEBNOVEL_SCRIPTS_DIR"
-  else
-    echo "ERROR: 缺少脚本: ${SCRIPTS_DIR}/webnovel.py" >&2
-    exit 1
-  fi
+  echo "ERROR: 缺少脚本: ${SCRIPTS_DIR}/webnovel.py" >&2
+  exit 1
 fi
 
 export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
