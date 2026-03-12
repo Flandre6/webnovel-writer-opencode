@@ -4,54 +4,39 @@
 
 Webnovel Writer 是一个基于 OpenCode 的长篇网文 AI 创作系统，目标降低 AI 写作中的"遗忘"和"幻觉"，支持长周期连载创作。
 
-项目组成：
-- **Python 核心**：数据管理、RAG、状态管理、CLI 命令
-- **前端 Dashboard**：React + Vite 可视化面板
-- **OpenCode Skills**：写作工作流命令集
-- **OpenCode Agents**：专业化子代理
-
 ## 构建/测试/开发命令
 
 ### Python
 
 ```bash
-# 安装依赖（使用 pyproject.toml）
+# 安装依赖
 pip install -e .
 
 # 运行所有测试
 pytest
 
 # 运行单个测试
-pytest webnovel-writer/scripts/data_modules/tests/test_config.py::test_config_paths_and_defaults
+pytest scripts/data_modules/tests/test_config.py::test_config_paths_and_defaults
 
 # 运行测试并生成覆盖率报告（最低要求 90%）
 pytest --cov --cov-report=term-missing
 
 # 运行特定测试文件
-pytest webnovel-writer/scripts/data_modules/tests/test_api_client.py
+pytest scripts/data_modules/tests/test_api_client.py
 ```
 
 **测试配置** (`pytest.ini`):
-- 测试路径: `webnovel-writer/scripts/data_modules/tests`
-- Python 路径: `webnovel-writer/scripts`
+- 测试路径: `scripts/data_modules/tests`
+- Python 路径: `scripts`
 - 覆盖率要求: 最低 90%
 
 ### 前端 (Dashboard)
 
 ```bash
-cd webnovel-writer/dashboard/frontend
-
-# 安装依赖
+cd dashboard/frontend
 npm install
-
-# 开发服务器
 npm run dev
-
-# 生产构建
 npm run build
-
-# 预览生产构建
-npm run preview
 ```
 
 ## 代码风格规范
@@ -67,7 +52,7 @@ npm run preview
 """
 ```
 
-**导入顺序**：标准库 → 第三方 → 本地
+**导入顺序**: 标准库 → 第三方 → 本地
 ```python
 import os
 import asyncio
@@ -81,14 +66,14 @@ from .config import get_config
 from .observability import logger
 ```
 
-**类型注解**：始终使用显式类型注解
+**类型注解**: 始终使用显式类型注解
 ```python
 def process_entities(entities: List[EntityState]) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
     return result
 ```
 
-**Dataclass**：用于数据结构
+**Dataclass**: 用于数据结构
 ```python
 from dataclasses import dataclass, field
 
@@ -111,7 +96,7 @@ logger.info("Processing chapter %d", chapter_num)
 logger.error("Failed to load config: %s", error)
 ```
 
-**错误处理**：使用 try/except 捕获具体异常
+**错误处理**: 使用 try/except 捕获具体异常
 ```python
 try:
     config = DataModulesConfig.from_project_root(project_root)
@@ -120,19 +105,18 @@ except ValueError as e:
     raise
 ```
 
-**路径处理**：使用 pathlib
+**路径处理**: 使用 pathlib
 ```python
 from pathlib import Path
 config_dir = project_root / ".webnovel"
 state_file = config_dir / "state.json"
 ```
 
-**异步/等待**：用于 I/O 操作
+**异步**: 用于 I/O 操作
 ```python
 async def fetch_embeddings(self, texts: List[str]) -> List[List[float]]:
     async with self._semaphore:
         session = await self._get_session()
-        # ... implementation
 ```
 
 ### JavaScript/React
@@ -148,112 +132,51 @@ export default function ComponentName() {
         fetchData()
     }, [])
     
-    return (
-        <div className="component">
-            {/* JSX content */}
-        </div>
-    )
+    return <div className="component">{/* JSX */}</div>
 }
 ```
 
 **命名规范**:
-- 组件：PascalCase（`DashboardPage`、`EntitiesPage`）
-- 函数：camelCase（`fetchJSON`、`formatNumber`）
-- CSS 类：kebab-case（`sidebar-header`、`nav-item`）
-
-**Hooks**:
-- 始终在 useEffect/useCallback 中包含依赖数组
-- 对于作为 props 传递的函数使用 useCallback
+- 组件: PascalCase (`DashboardPage`)
+- 函数: camelCase (`fetchJSON`)
+- CSS 类: kebab-case (`sidebar-header`)
 
 ## 项目结构
 
 ```
 webnovel-writer/
-├── webnovel-writer/              # 主代码目录
-│   ├── scripts/                 # Python 核心脚本
-│   │   ├── data_modules/        # 核心模块
-│   │   │   ├── config.py        # 配置管理
-│   │   │   ├── state_manager.py # 状态持久化
-│   │   │   ├── context_manager.py # RAG 上下文
-│   │   │   ├── api_client.py    # Embedding/Rerank API
-│   │   │   └── tests/           # 单元测试
-│   │   └── webnovel.py         # CLI 入口
-│   ├── skills/                  # OpenCode Skills (9个)
-│   │   ├── webnovel-init/      # 项目初始化
-│   │   ├── webnovel-plan/      # 大纲规划
-│   │   ├── webnovel-write/     # 章节写作
-│   │   ├── webnovel-review/    # 审查润色
-│   │   ├── webnovel-resume/    # 恢复写作
-│   │   ├── webnovel-query/     # RAG 查询
-│   │   ├── webnovel-dashboard/ # 可视化面板
-│   │   └── webnovel-learn/     # 学习模式
-│   ├── agents/                  # OpenCode Agents (8个)
-│   │   ├── context-agent.md    # 上下文搜集
-│   │   ├── data-agent.md       # 数据处理
-│   │   ├── consistency-checker.md  # 设定一致性
-│   │   ├── continuity-checker.md   # 连贯性检查
-│   │   ├── ooc-checker.md      # 人物OOC
-│   │   ├── high-point-checker.md  # 爽点检查
-│   │   ├── pacing-checker.md    # 节奏检查
-│   │   └── reader-pull-checker.md # 追读力检查
-│   ├── dashboard/               # 可视化面板
-│   ├── references/              # 共享参考文档
-│   ├── templates/              # 模板
-│   └── genres/                 # 题材参考
-├── docs/                        # 中文文档
-├── pytest.ini                   # 测试配置
-├── requirements.txt             # Python 依赖
-└── README.md                    # 入口文档
+├── scripts/                  # Python 核心
+│   ├── data_modules/        # 核心模块
+│   │   ├── config.py       # 配置管理
+│   │   ├── state_manager.py
+│   │   ├── context_manager.py
+│   │   ├── api_client.py
+│   │   └── tests/         # 单元测试
+│   └── webnovel.py        # CLI 入口
+├── skills/                  # OpenCode Skills
+│   ├── webnovel-init/
+│   ├── webnovel-plan/
+│   ├── webnovel-write/
+│   └── ...
+├── genres/                  # 题材参考
+├── references/              # 共享文档
+├── templates/              # 输出模板
+├── init.sh / init.bat     # 安装脚本
+├── AGENTS.md
+└── README.md
 ```
 
 ## 关键约定
 
-1. **状态管理**：使用 `DataModulesConfig` 进行配置；使用 `StateManager` 管理小说状态
-2. **RAG 流程**：查询 → 检索 → 重排 → 构建上下文
-3. **实体追踪**：所有新实体必须通过 `EntityLinker` 注册
-4. **文件编码**：所有文件使用 UTF-8
-5. **中文文档**：所有用户面向的字符串和文档使用中文
-
-## OpenCode Agents 使用
-
-Agents 放在 `webnovel-writer/agents/` 目录，使用 Markdown 格式：
-
-```yaml
----
-description: 代理功能描述
-mode: subagent
-model: inherit
-tools:
-  read: true
-  write: false
----
-```
-
-使用方式：
-- 复制到 OpenCode 配置：`cp -r webnovel-writer/agents ~/.config/opencode/agents/`
-- 通过 `@agent-name` 调用
-
-## 常见任务
-
-### 运行单个测试
-```bash
-pytest webnovel-writer/scripts/data_modules/tests/test_config.py::test_get_config_and_set_project_root
-```
-
-### 添加新 CLI 命令
-1. 在 `webnovel.py` 中添加命令处理器
-2. 在 `tests/test_webnovel_unified_cli.py` 中添加测试
-3. 在 `docs/commands.md` 中更新文档
-
-### 修改 RAG 配置
-编辑环境变量或 `config.py`：
-- `EMBED_BASE_URL`、`EMBED_MODEL`、`EMBED_API_KEY`
-- `RERANK_BASE_URL`、`RERANK_MODEL`、`RERANK_API_KEY`
+1. **状态管理**: 使用 `DataModulesConfig` 进行配置；使用 `StateManager` 管理小说状态
+2. **RAG 流程**: 查询 → 检索 → 重排 → 构建上下文
+3. **实体追踪**: 所有新实体必须通过 `EntityLinker` 注册
+4. **文件编码**: 所有文件使用 UTF-8
+5. **中文文档**: 所有用户面向的字符串和文档使用中文
 
 ## 测试最佳实践
 
 1. 使用 `tmp_path` fixture 进行文件系统测试
 2. 使用 `monkeypatch` 进行环境变量模拟
 3. 测试成功和错误路径
-4. 保持测试函数专注（每个测试一个断言最好）
-5. 异步测试需要 `@pytest.mark.asyncio` 装饰器
+4. 异步测试需要 `@pytest.mark.asyncio` 装饰器
