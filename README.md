@@ -87,6 +87,10 @@ cp .env.example .env
 
 GPL v3 - 继承自原项目。
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/image?repos=lujih/webnovel-writer-opencode&type=date&legend=top-left)](https://www.star-history.com/?repos=lujih%2Fwebnovel-writer-opencode&type=date&legend=top-left)
+
 ## 致谢
 
 - 原作者 [lingfengQAQ](https://github.com/lingfengQAQ)
