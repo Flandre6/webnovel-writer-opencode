@@ -25,8 +25,13 @@ echo [2/5] Extracting...
 powershell -Command "Expand-Archive -Path 'webnovel-writer.zip' -DestinationPath '.' -Force"
 del /Q webnovel-writer.zip
 
-echo [3/5] Creating .opencode directory...
+echo [3/5] Creating directories...
 if not exist ".opencode" mkdir ".opencode"
+if not exist ".opencode\skills" mkdir ".opencode\skills"
+if not exist ".opencode\skills\webnovel-writer" mkdir ".opencode\skills\webnovel-writer"
+if not exist ".opencode\agents" mkdir ".opencode\agents"
+
+echo [4/5] Copying files...
 
 REM Find source directory
 set "SOURCE_DIR="
@@ -41,36 +46,28 @@ if not defined SOURCE_DIR (
     exit /b 1
 )
 
-echo [4/5] Copying all files to .opencode...
+echo Source: %SOURCE_DIR%
 
-REM Copy skills
-if exist "%SOURCE_DIR%\skills" (
-    xcopy /E /I /Y "%SOURCE_DIR%\skills\*" ".opencode\skills\" >nul 2>&1
-    echo   skills: OK
+REM Copy each skill folder individually
+for /d %%d in ("%SOURCE_DIR%\skills\*") do (
+    echo   Copying %%~nxd...
+    xcopy /E /I /Y "%%d" ".opencode\skills\webnovel-writer\%%~nxd\" >nul 2>&1
 )
 
-REM Copy genres
-if exist "%SOURCE_DIR%\genres" (
-    xcopy /E /I /Y "%SOURCE_DIR%\genres\*" ".opencode\genres\" >nul 2>&1
-    echo   genres: OK
+REM Check if skills were copied
+if exist ".opencode\skills\webnovel-writer\webnovel-init\SKILL.md" (
+    echo   Skills: OK
+) else (
+    echo   Skills: FAILED
+    dir /s /b ".opencode\skills"
 )
 
-REM Copy references
-if exist "%SOURCE_DIR%\references" (
-    xcopy /E /I /Y "%SOURCE_DIR%\references\*" ".opencode\references\" >nul 2>&1
-    echo   references: OK
-)
-
-REM Copy templates
-if exist "%SOURCE_DIR%\templates" (
-    xcopy /E /I /Y "%SOURCE_DIR%\templates\*" ".opencode\templates\" >nul 2>&1
-    echo   templates: OK
-)
-
-REM Copy scripts
-if exist "%SOURCE_DIR%\scripts" (
-    xcopy /E /I /Y "%SOURCE_DIR%\scripts" ".opencode\scripts\" >nul 2>&1
-    echo   scripts: OK
+REM Copy agents
+if exist "%SOURCE_DIR%\agents" (
+    xcopy /E /I /Y "%SOURCE_DIR%\agents\*" ".opencode\agents\" >nul 2>&1
+    echo   Agents: OK
+) else (
+    echo   Agents: NOT FOUND
 )
 
 REM Copy .env.example
@@ -91,7 +88,7 @@ if exist "%SOURCE_DIR%\.env.example" (
     echo   .env.example: CREATED
 )
 
-REM Clean up source directory
+REM Clean up
 if exist "%SOURCE_DIR%" rmdir /S /Q "%SOURCE_DIR%"
 
 echo [5/5] Done!
@@ -101,7 +98,7 @@ echo   Installation Complete!
 echo ========================================
 echo.
 
-dir /b ".opencode"
+dir /b ".opencode\skills\webnovel-writer"
 
 echo.
 echo Next steps:

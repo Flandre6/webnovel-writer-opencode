@@ -5,7 +5,7 @@
 
 ## 项目介绍
 
-本项目是基于 [lingfengQAQ/webnovel-writer](https://github.com/lingfengQAQ/webnovel-writer) 改编的 OpenCode 版本，目标是让 Webnovel Writer 可以在 OpenCode 中使用。
+本项目是基于 [lingfengQAQ/webnovel-writer](https://github.com/lingfengQAQ/webnovel-writer) 改编的 OpenCode 版本，目标是让 Webnovel Writer 可以在 [OpenCode](https://github.com/lujih/webnovel-writer-opencode) 中使用。
 
 ## 特性
 
@@ -20,7 +20,7 @@
 
 ```bash
 # 在你的小说项目目录运行
-curl -sL https://raw.githubusercontent.com/lingfengQAQ/webnovel-writer/main/init.sh | bash
+curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/main/init.sh | bash
 ```
 
 或者下载 `init.bat` 双击运行（Windows）。
