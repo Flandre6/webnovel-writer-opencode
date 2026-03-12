@@ -25,10 +25,7 @@ curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/main/i
 
 或者下载 `init.bat` 双击运行（Windows）。
 
-这会自动：
-- 创建 `.opencode/skills/webnovel-writer/`
-- 创建 `.opencode/agents/`
-- 创建 `.env.example`
+这会自动创建 `.opencode/` 目录并复制所有必要文件。
 
 ### 配置环境变量
 
@@ -48,7 +45,7 @@ cp .env.example .env
 - `/webnovel-review` - 审查润色
 - `/webnovel-query` - 查询设定
 
-## Skills
+## Skills (8个)
 
 | Skill | 功能 |
 |-------|------|
@@ -61,29 +58,30 @@ cp .env.example .env
 | `webnovel-dashboard` | 可视化面板 |
 | `webnovel-learn` | 学习模式 |
 
-## Agents
+## 项目结构
 
-| Agent | 功能 |
-|-------|------|
-| `context-agent` | 上下文搜集 |
-| `data-agent` | 数据处理 |
-| `consistency-checker` | 设定一致性 |
-| `continuity-checker` | 连贯性检查 |
-| `ooc-checker` | 人物 OOC |
-| `high-point-checker` | 爽点检查 |
-| `pacing-checker` | 节奏检查 |
-| `reader-pull-checker` | 追读力检查 |
+```
+项目目录/
+├── .opencode/
+│   ├── skills/          # 8个 Skills
+│   ├── scripts/        # Python 核心脚本
+│   ├── references/     # 参考文档
+│   ├── genres/         # 题材参考
+│   └── templates/      # 模板
+├── .env.example
+└── init.bat / init.sh
+```
 
 ## 环境变量
 
-| 变量 | 说明 |
-|------|------|
-| `EMBED_BASE_URL` | Embedding API 地址 |
-| `EMBED_MODEL` | Embedding 模型 |
-| `EMBED_API_KEY` | Embedding API Key |
-| `RERANK_BASE_URL` | Rerank API 地址 |
-| `RERANK_MODEL` | Rerank 模型 |
-| `RERANK_API_KEY` | Rerank API Key |
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `EMBED_BASE_URL` | Embedding API 地址 | https://api-inference.modelscope.cn/v1 |
+| `EMBED_MODEL` | Embedding 模型 | Qwen/Qwen3-Embedding-8B |
+| `EMBED_API_KEY` | Embedding API Key | - |
+| `RERANK_BASE_URL` | Rerank API 地址 | https://api.jina.ai/v1 |
+| `RERANK_MODEL` | Rerank 模型 | jina-reranker-v3 |
+| `RERANK_API_KEY` | Rerank API Key | - |
 
 ## 开源协议
 
