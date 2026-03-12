@@ -10,20 +10,47 @@ set "PROJECT_DIR=%CD%"
 set "REPO=lujih/webnovel-writer-opencode"
 
 echo [1/5] Downloading...
-powershell -Command "Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/main.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing"
-if not exist "webnovel-writer.zip" (
-    powershell -Command "Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/master.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing"
+set "DOWNLOADED=0"
+
+powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/main.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; if (Test-Path 'webnovel-writer.zip') { exit 0 } else { exit 1 } } catch { exit 1 }"
+if %errorlevel% equ 0 (
+    set "DOWNLOADED=1"
+)
+
+if %DOWNLOADED% equ 0 (
+    powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/master.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; if (Test-Path 'webnovel-writer.zip') { exit 0 } else { exit 1 } } catch { exit 1 }"
+    if %errorlevel% equ 0 set "DOWNLOADED=1"
+)
+
+if %DOWNLOADED% equ 0 (
+    powershell -Command "try { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/%REPO%/main/init.bat' -OutFile 'init.bat' -UseBasicParsing -TimeoutSec 60; exit 0 } catch { exit 1 }"
+    if %errorlevel% equ 0 (
+        echo.
+        echo NOTE: GitHub download failed, but init.bat is accessible.
+        echo This may be a network issue. Please try:
+        echo   1. Using a VPN or proxy
+        echo   2. Manually downloading the repo from GitHub
+        echo.
+        pause
+        exit /b 1
+    )
 )
 
 if not exist "webnovel-writer.zip" (
-    echo ERROR: Download failed
+    echo ERROR: Download failed - network issue or repo not found
+    echo.
+    echo Possible solutions:
+    echo   1. Check your internet connection
+    echo   2. Use a VPN if you're in a restricted region
+    echo   3. Manually download from: https://github.com/%REPO%/archive/main.zip
+    echo.
     pause
     exit /b 1
 )
 
 echo [2/5] Extracting...
 powershell -Command "Expand-Archive -Path 'webnovel-writer.zip' -DestinationPath '.' -Force"
-del /Q webnovel-writer.zip
+del /Q webnovel-writer.zip 2>nul
 
 echo [3/5] Creating .opencode directory...
 if not exist ".opencode" mkdir ".opencode"
@@ -35,39 +62,37 @@ for /d %%d in ("%PROJECT_DIR%\webnovel-writer-opencode-*") do (
 )
 
 if not defined SOURCE_DIR (
-    echo ERROR: Source directory not found
+    echo ERROR: Source directory not found after extraction
     dir /b "%PROJECT_DIR%"
     pause
     exit /b 1
 )
 
-echo [4/5] Copying all files to .opencode...
+echo [4/5] Copying files from %SOURCE_DIR%...
 
-REM Copy skills
+REM Copy each directory
 if exist "%SOURCE_DIR%\skills" (
     xcopy /E /I /Y "%SOURCE_DIR%\skills\*" ".opencode\skills\" >nul 2>&1
     echo   skills: OK
+) else (
+    echo   skills: NOT FOUND
 )
 
-REM Copy genres
 if exist "%SOURCE_DIR%\genres" (
     xcopy /E /I /Y "%SOURCE_DIR%\genres\*" ".opencode\genres\" >nul 2>&1
     echo   genres: OK
 )
 
-REM Copy references
 if exist "%SOURCE_DIR%\references" (
     xcopy /E /I /Y "%SOURCE_DIR%\references\*" ".opencode\references\" >nul 2>&1
     echo   references: OK
 )
 
-REM Copy templates
 if exist "%SOURCE_DIR%\templates" (
     xcopy /E /I /Y "%SOURCE_DIR%\templates\*" ".opencode\templates\" >nul 2>&1
     echo   templates: OK
 )
 
-REM Copy scripts
 if exist "%SOURCE_DIR%\scripts" (
     xcopy /E /I /Y "%SOURCE_DIR%\scripts" ".opencode\scripts\" >nul 2>&1
     echo   scripts: OK
@@ -91,7 +116,7 @@ if exist "%SOURCE_DIR%\.env.example" (
     echo   .env.example: CREATED
 )
 
-REM Clean up source directory
+REM Clean up
 if exist "%SOURCE_DIR%" rmdir /S /Q "%SOURCE_DIR%"
 
 echo [5/5] Done!

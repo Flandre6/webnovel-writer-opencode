@@ -2,8 +2,6 @@
 # Webnovel Writer Installer
 # Usage: curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/main/init.sh | bash
 
-set -e
-
 REPO="lujih/webnovel-writer-opencode"
 BRANCH="main"
 ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip"
@@ -19,25 +17,68 @@ fi
 
 echo "Project: $PROJECT_DIR"
 
-TEMP_DIR=$(mktemp -d)
-cd "$TEMP_DIR"
+# Download with retry
+MAX_RETRIES=3
+RETRY_COUNT=0
+SUCCESS=0
 
-echo "Downloading..."
-curl -sL "$ARCHIVE_URL" -o "repo.zip"
+while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ $SUCCESS -eq 0 ]; do
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    echo "Downloading (attempt $RETRY_COUNT/$MAX_RETRIES)..."
+    
+    if curl -sL --max-time 120 "$ARCHIVE_URL" -o "repo.zip" 2>/dev/null; then
+        if [ -s "repo.zip" ]; then
+            SUCCESS=1
+        fi
+    fi
+    
+    if [ $SUCCESS -eq 0 ]; then
+        sleep 2
+    fi
+done
+
+if [ $SUCCESS -eq 0 ]; then
+    echo ""
+    echo "ERROR: Download failed after $MAX_RETRIES attempts"
+    echo "Possible solutions:"
+    echo "  1. Check your internet connection"
+    echo "  2. Use a VPN if you're in a restricted region"
+    echo "  3. Manually download from: https://github.com/$REPO/archive/main.zip"
+    exit 1
+fi
+
+echo "Extracting..."
 unzip -q "repo.zip"
-cd "webnovel-writer-${BRANCH}"
+rm -f "repo.zip"
 
-echo "Installing..."
+# Find extracted directory
+SOURCE_DIR=""
+for d in "$PROJECT_DIR"/webnovel-writer-opencode-*; do
+    if [ -d "$d" ]; then
+        SOURCE_DIR="$d"
+        break
+    fi
+done
+
+if [ -z "$SOURCE_DIR" ]; then
+    echo "ERROR: Could not find extracted directory"
+    exit 1
+fi
+
+echo "Installing to .opencode..."
 mkdir -p "${PROJECT_DIR}/.opencode"
 
-cp -r skills "${PROJECT_DIR}/.opencode/"
-cp -r genres "${PROJECT_DIR}/.opencode/"
-cp -r references "${PROJECT_DIR}/.opencode/"
-cp -r templates "${PROJECT_DIR}/.opencode/"
-cp -r scripts "${PROJECT_DIR}/.opencode/"
+# Copy directories
+[ -d "$SOURCE_DIR/skills" ] && cp -r "$SOURCE_DIR/skills" "${PROJECT_DIR}/.opencode/" && echo "skills: OK"
+[ -d "$SOURCE_DIR/genres" ] && cp -r "$SOURCE_DIR/genres" "${PROJECT_DIR}/.opencode/" && echo "genres: OK"
+[ -d "$SOURCE_DIR/references" ] && cp -r "$SOURCE_DIR/references" "${PROJECT_DIR}/.opencode/" && echo "references: OK"
+[ -d "$SOURCE_DIR/templates" ] && cp -r "$SOURCE_DIR/templates" "${PROJECT_DIR}/.opencode/" && echo "templates: OK"
+[ -d "$SOURCE_DIR/scripts" ] && cp -r "$SOURCE_DIR/scripts" "${PROJECT_DIR}/.opencode/" && echo "scripts: OK"
 
-if [ -f ".env.example" ]; then
-    cp ".env.example" "${PROJECT_DIR}/.env.example"
+# Copy or create .env.example
+if [ -f "$SOURCE_DIR/.env.example" ]; then
+    cp "$SOURCE_DIR/.env.example" "${PROJECT_DIR}/.env.example"
+    echo ".env.example: OK"
 else
     cat > "${PROJECT_DIR}/.env.example" << 'EOF'
 EMBED_BASE_URL=https://api-inference.modelscope.cn/v1
@@ -48,10 +89,11 @@ RERANK_BASE_URL=https://api.jina.ai/v1
 RERANK_MODEL=jina-reranker-v3
 RERANK_API_KEY=your_api_key
 EOF
+    echo ".env.example: CREATED"
 fi
 
-cd "$PROJECT_DIR"
-rm -rf "$TEMP_DIR"
+# Cleanup
+rm -rf "$SOURCE_DIR"
 
 echo ""
 echo "Done!"
