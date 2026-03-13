@@ -92,8 +92,6 @@ pip install -r https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/
 └── init.bat / init.sh
 ```
 
-## Agents (8个)
-
 ## 环境变量
 
 | 变量 | 说明 | 默认值 |
