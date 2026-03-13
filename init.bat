@@ -98,6 +98,16 @@ if exist "%SOURCE_DIR%\scripts" (
     echo   scripts: OK
 )
 
+REM Install Python dependencies
+echo.
+echo [5/6] Installing Python dependencies...
+pip install -r https://raw.githubusercontent.com/%REPO%/master/requirements.txt >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   Python dependencies: OK
+) else (
+    echo   Python dependencies: SKIPPED (may already be installed)
+)
+
 REM Copy .env.example
 if exist "%SOURCE_DIR%\.env.example" (
     copy /Y "%SOURCE_DIR%\.env.example" ".env.example" >nul 2>&1
@@ -119,7 +129,7 @@ if exist "%SOURCE_DIR%\.env.example" (
 REM Clean up
 if exist "%SOURCE_DIR%" rmdir /S /Q "%SOURCE_DIR%"
 
-echo [5/5] Done!
+echo [6/6] Done!
 echo.
 echo ========================================
 echo   Installation Complete!

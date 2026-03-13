@@ -39,7 +39,7 @@ cp .env.example .env
 
 ```bash
 # 安装依赖
-pip install -r requirements.txt
+pip install -r https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/requirements.txt
 ```
 
 ### 开始使用

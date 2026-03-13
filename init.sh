@@ -86,6 +86,14 @@ mkdir -p "${PROJECT_DIR}/.opencode"
 [ -d "$SOURCE_DIR/templates" ] && cp -r "$SOURCE_DIR/templates" "${PROJECT_DIR}/.opencode/" && echo "templates: OK"
 [ -d "$SOURCE_DIR/scripts" ] && cp -r "$SOURCE_DIR/scripts" "${PROJECT_DIR}/.opencode/" && echo "scripts: OK"
 
+# Install Python dependencies
+echo "Installing Python dependencies..."
+if pip install -r "https://raw.githubusercontent.com/${REPO}/${BRANCH}/requirements.txt" 2>/dev/null; then
+    echo "Python dependencies: OK"
+else
+    echo "Python dependencies: SKIPPED (may already be installed)"
+fi
+
 # Copy or create .env.example
 if [ -f "$SOURCE_DIR/.env.example" ]; then
     cp "$SOURCE_DIR/.env.example" "${PROJECT_DIR}/.env.example"
