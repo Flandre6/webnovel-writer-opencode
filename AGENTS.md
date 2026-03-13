@@ -135,24 +135,17 @@ export default function ComponentName() {
 ## 项目结构
 
 ```
-webnovel-writer/
-├── scripts/                  # Python 核心
-│   ├── data_modules/        # 核心模块
-│   │   ├── config.py       # 配置管理
-│   │   ├── state_manager.py
-│   │   ├── context_manager.py
-│   │   ├── api_client.py
-│   │   └── tests/         # 单元测试
-│   └── webnovel.py        # CLI 入口
-├── skills/                  # OpenCode Skills
-│   ├── webnovel-init/
-│   ├── webnovel-plan/
-│   ├── webnovel-write/
-│   └── ...
-├── genres/                  # 题材参考
-├── references/              # 共享文档
-├── templates/              # 输出模板
-├── init.sh / init.bat     # 安装脚本
+项目目录/
+├── .opencode/              # OpenCode 配置
+│   ├── skills/            # 7个 Skills
+│   ├── scripts/          # Python 核心
+│   ├── references/       # 参考文档
+│   ├── genres/           # 题材参考
+│   └── templates/        # 模板
+├── opencode.json          # Agents 配置
+├── prompts/               # Agent 提示词
+├── .env.example
+├── init.sh / init.bat    # 安装脚本
 ├── AGENTS.md
 └── README.md
 ```

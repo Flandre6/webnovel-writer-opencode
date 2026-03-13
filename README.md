@@ -19,7 +19,7 @@
 
 ```bash
 # 在你的小说项目目录运行
-curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/main/init.sh | bash
+curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.sh | bash
 ```
 
 或者下载 `init.bat` 双击运行（Windows）。
@@ -63,6 +63,19 @@ pip install -r https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/
 | `webnovel-query` | 查询设定 |
 | `webnovel-learn` | 学习模式 |
 
+## Agents (8个)
+
+| Agent | 功能 |
+|-------|------|
+| `context-agent` | 上下文搜集 |
+| `data-agent` | 数据处理 |
+| `consistency-checker` | 设定一致性 |
+| `continuity-checker` | 连贯性检查 |
+| `ooc-checker` | 人物 OOC |
+| `high-point-checker` | 爽点检查 |
+| `pacing-checker` | 节奏检查 |
+| `reader-pull-checker` | 追读力检查 |
+
 ## 项目结构
 
 ```
@@ -73,9 +86,13 @@ pip install -r https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/
 │   ├── references/     # 参考文档
 │   ├── genres/         # 题材参考
 │   └── templates/      # 模板
+├── opencode.json       # Agents 配置
+├── prompts/            # Agent 提示词
 ├── .env.example
 └── init.bat / init.sh
 ```
+
+## Agents (8个)
 
 ## 环境变量
 
