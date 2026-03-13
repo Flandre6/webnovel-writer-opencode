@@ -98,6 +98,17 @@ if exist "%SOURCE_DIR%\scripts" (
     echo   scripts: OK
 )
 
+REM Copy opencode.json and prompts to project root
+if exist "%SOURCE_DIR%\opencode.json" (
+    copy /Y "%SOURCE_DIR%\opencode.json" "opencode.json" >nul 2>&1
+    echo   opencode.json: OK
+)
+
+if exist "%SOURCE_DIR%\prompts" (
+    xcopy /E /I /Y "%SOURCE_DIR%\prompts" "prompts\" >nul 2>&1
+    echo   prompts: OK
+)
+
 REM Install Python dependencies
 echo.
 echo [5/6] Installing Python dependencies...

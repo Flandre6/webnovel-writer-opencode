@@ -86,6 +86,10 @@ mkdir -p "${PROJECT_DIR}/.opencode"
 [ -d "$SOURCE_DIR/templates" ] && cp -r "$SOURCE_DIR/templates" "${PROJECT_DIR}/.opencode/" && echo "templates: OK"
 [ -d "$SOURCE_DIR/scripts" ] && cp -r "$SOURCE_DIR/scripts" "${PROJECT_DIR}/.opencode/" && echo "scripts: OK"
 
+# Copy opencode.json and prompts to project root
+[ -f "$SOURCE_DIR/opencode.json" ] && cp "$SOURCE_DIR/opencode.json" "${PROJECT_DIR}/" && echo "opencode.json: OK"
+[ -d "$SOURCE_DIR/prompts" ] && cp -r "$SOURCE_DIR/prompts" "${PROJECT_DIR}/" && echo "prompts: OK"
+
 # Install Python dependencies
 echo "Installing Python dependencies..."
 if pip install -r "https://raw.githubusercontent.com/${REPO}/${BRANCH}/requirements.txt" 2>/dev/null; then
