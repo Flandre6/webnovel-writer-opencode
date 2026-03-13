@@ -1,9 +1,9 @@
 #!/bin/bash
 # Webnovel Writer Installer
-# Usage: curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/main/init.sh | bash
+# Usage: curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.sh | bash
 
 REPO="lujih/webnovel-writer-opencode"
-BRANCH="main"
+BRANCH="master"
 ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip"
 
 echo "Webnovel Writer Installer"
@@ -17,14 +17,15 @@ fi
 
 echo "Project: $PROJECT_DIR"
 
-# Download with retry
+# Download with retry and fallback
 MAX_RETRIES=3
 RETRY_COUNT=0
 SUCCESS=0
 
+# Try GitHub master first
 while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ $SUCCESS -eq 0 ]; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "Downloading (attempt $RETRY_COUNT/$MAX_RETRIES)..."
+    echo "Downloading from GitHub (attempt $RETRY_COUNT/$MAX_RETRIES)..."
     
     if curl -sL --max-time 120 "$ARCHIVE_URL" -o "repo.zip" 2>/dev/null; then
         if [ -s "repo.zip" ]; then
@@ -37,13 +38,23 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ $SUCCESS -eq 0 ]; do
     fi
 done
 
+# Try China mirror as fallback
+if [ $SUCCESS -eq 0 ]; then
+    echo "Trying China mirror (ghproxy)..."
+    if curl -sL --max-time 120 "https://ghproxy.com/https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip" -o "repo.zip" 2>/dev/null; then
+        if [ -s "repo.zip" ]; then
+            SUCCESS=1
+        fi
+    fi
+fi
+
 if [ $SUCCESS -eq 0 ]; then
     echo ""
-    echo "ERROR: Download failed after $MAX_RETRIES attempts"
+    echo "ERROR: Download failed after all attempts"
     echo "Possible solutions:"
     echo "  1. Check your internet connection"
     echo "  2. Use a VPN if you're in a restricted region"
-    echo "  3. Manually download from: https://github.com/$REPO/archive/main.zip"
+    echo "  3. Manually download from: https://github.com/$REPO/archive/$BRANCH.zip"
     exit 1
 fi
 

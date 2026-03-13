@@ -12,18 +12,18 @@ set "REPO=lujih/webnovel-writer-opencode"
 echo [1/5] Downloading...
 set "DOWNLOADED=0"
 
-powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/main.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; if (Test-Path 'webnovel-writer.zip') { exit 0 } else { exit 1 } } catch { exit 1 }"
-if %errorlevel% equ 0 (
-    set "DOWNLOADED=1"
-)
+REM Try GitHub master branch
+powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/master.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; if (Test-Path 'webnovel-writer.zip') { exit 0 } else { exit 1 } } catch { exit 1 }"
+if %errorlevel% equ 0 set "DOWNLOADED=1"
 
+REM Try China mirror (ghproxy)
 if %DOWNLOADED% equ 0 (
-    powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/master.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; if (Test-Path 'webnovel-writer.zip') { exit 0 } else { exit 1 } } catch { exit 1 }"
+    powershell -Command "try { Invoke-WebRequest -Uri 'https://ghproxy.com/https://github.com/%REPO%/archive/refs/heads/master.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; if (Test-Path 'webnovel-writer.zip') { exit 0 } else { exit 1 } } catch { exit 1 }"
     if %errorlevel% equ 0 set "DOWNLOADED=1"
 )
 
 if %DOWNLOADED% equ 0 (
-    powershell -Command "try { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/%REPO%/main/init.bat' -OutFile 'init.bat' -UseBasicParsing -TimeoutSec 60; exit 0 } catch { exit 1 }"
+    powershell -Command "try { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/%REPO%/master/init.bat' -OutFile 'init.bat' -UseBasicParsing -TimeoutSec 60; exit 0 } catch { exit 1 }"
     if %errorlevel% equ 0 (
         echo.
         echo NOTE: GitHub download failed, but init.bat is accessible.
@@ -42,7 +42,7 @@ if not exist "webnovel-writer.zip" (
     echo Possible solutions:
     echo   1. Check your internet connection
     echo   2. Use a VPN if you're in a restricted region
-    echo   3. Manually download from: https://github.com/%REPO%/archive/main.zip
+    echo   3. Manually download from: https://github.com/%REPO%/archive/master.zip
     echo.
     pause
     exit /b 1
