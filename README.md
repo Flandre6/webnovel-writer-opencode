@@ -35,6 +35,13 @@ cp .env.example .env
 # 编辑 .env，填入你的 API Key
 ```
 
+### 安装 Python 依赖
+
+```bash
+# 安装依赖
+pip install -r requirements.txt
+```
+
 ### 开始使用
 
 在 OpenCode 中直接使用命令：

@@ -1,0 +1,11 @@
+# Webnovel Writer Dependencies
+
+# Core
+aiohttp
+filelock
+pydantic
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
