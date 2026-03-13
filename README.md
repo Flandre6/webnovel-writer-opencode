@@ -12,7 +12,6 @@
 - **完整的写作工作流**：从项目初始化，大纲规划、章节写作到审查润色
 - **RAG 上下文管理**：智能检索相关设定、角色、伏笔
 - **多维度质量检查**：设定一致性、连贯性、OOC、爽点、节奏、追读力
-- **可视化 Dashboard**：实时查看项目状态和进度
 
 ## 快速开始
 
@@ -45,7 +44,7 @@ cp .env.example .env
 - `/webnovel-review` - 审查润色
 - `/webnovel-query` - 查询设定
 
-## Skills (8个)
+## Skills (7个)
 
 | Skill | 功能 |
 |-------|------|
@@ -55,7 +54,6 @@ cp .env.example .env
 | `webnovel-review` | 审查润色 |
 | `webnovel-resume` | 恢复写作 |
 | `webnovel-query` | 查询设定 |
-| `webnovel-dashboard` | 可视化面板 |
 | `webnovel-learn` | 学习模式 |
 
 ## 项目结构
@@ -63,7 +61,7 @@ cp .env.example .env
 ```
 项目目录/
 ├── .opencode/
-│   ├── skills/          # 8个 Skills
+│   ├── skills/          # 7个 Skills
 │   ├── scripts/        # Python 核心脚本
 │   ├── references/     # 参考文档
 │   ├── genres/         # 题材参考

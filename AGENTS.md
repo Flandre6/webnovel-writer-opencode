@@ -30,15 +30,6 @@ pytest scripts/data_modules/tests/test_api_client.py
 - Python 路径: `scripts`
 - 覆盖率要求: 最低 90%
 
-### 前端 (Dashboard)
-
-```bash
-cd dashboard/frontend
-npm install
-npm run dev
-npm run build
-```
-
 ## 代码风格规范
 
 ### Python
