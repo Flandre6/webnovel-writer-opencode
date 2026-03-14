@@ -163,23 +163,23 @@ RERANK_API_KEY=your_api_key
    └─→ RAG 检索相关上下文
 ```
 
-## 开源协议
-
-[GPL v3](LICENSE) - 继承自原项目
-
 ## 卸载流程
 
 如果你想完全移除 Webnovel Writer，可以执行以下步骤：
 
 ```bash
 # 删除项目目录下的所有安装文件
-rm -rf .opencode/ opencode.json prompts/ .env
+.opencode/ prompts/ opencode.json .env init.bat(如果有)
 
 # 如果需要，可以卸载 Python 依赖
 pip uninstall aiohttp filelock pydantic pytest pytest-asyncio pytest-cov -y
 ```
 
 > 注意：卸载不会影响你已创建的网文项目文件（正文、大纲、设定集等），这些文件保存在独立的项目目录中。
+
+## 开源协议
+
+[GPL v3](LICENSE) - 继承自原项目
 
 ## 致谢
 
