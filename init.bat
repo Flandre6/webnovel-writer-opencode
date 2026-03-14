@@ -119,13 +119,15 @@ if %errorlevel% equ 0 (
     echo   Python dependencies: SKIPPED (may already be installed)
 )
 
-REM Copy .env.example
-if exist "%SOURCE_DIR%\.env.example" (
-    copy /Y "%SOURCE_DIR%\.env.example" ".env.example" >nul 2>&1
-    echo   .env.example: OK
+REM Copy .env
+if exist "%SOURCE_DIR%\.env" (
+    copy /Y "%SOURCE_DIR%\.env" ".env" >nul 2>&1
+    echo   .env: OK
 ) else (
     (
         echo # Webnovel Writer Config
+        echo # 编辑填入你的 API Key
+        echo.
         echo EMBED_BASE_URL=https://api-inference.modelscope.cn/v1
         echo EMBED_MODEL=Qwen/Qwen3-Embedding-8B
         echo EMBED_API_KEY=your_api_key
@@ -133,8 +135,8 @@ if exist "%SOURCE_DIR%\.env.example" (
         echo RERANK_BASE_URL=https://api.jina.ai/v1
         echo RERANK_MODEL=jina-reranker-v3
         echo RERANK_API_KEY=your_api_key
-    ) > .env.example
-    echo   .env.example: CREATED
+    ) > .env
+    echo   .env: CREATED
 )
 
 REM Clean up
@@ -151,7 +153,7 @@ dir /b ".opencode"
 
 echo.
 echo Next steps:
-echo   1. Copy .env.example to .env and add API Key
+echo   1. Edit .env and add your API Key
 echo   2. In OpenCode, use /webnovel-init
 
 pause
