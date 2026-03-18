@@ -49,21 +49,29 @@ if not defined SOURCE_DIR (
 )
 
 echo [4/6] Copying files...
-xcopy /E /I /Y "%SOURCE_DIR%\skills" ".opencode\skills\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\genres" ".opencode\genres\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\references" ".opencode\references\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\templates" ".opencode\templates\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\scripts" ".opencode\scripts\" >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.opencode\skills" ".opencode\skills\" >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.opencode\genres" ".opencode\genres\" >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.opencode\references" ".opencode\references\" >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.opencode\templates" ".opencode\templates\" >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.opencode\scripts" ".opencode\scripts\" >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\opencode.json" "." >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\prompts" "prompts\" >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\init.bat" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\init.sh" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\README.md" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\requirements.txt" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\AGENTS.md" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.gitignore" "." >nul 2>&1
 echo   Files copied
 
 echo [5/6] Installing Python dependencies...
-pip install -r "%SOURCE_DIR%\requirements.txt" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo   Python deps: OK
-) else (
-    echo   Python deps: Already installed or skipped
+if exist "%SOURCE_DIR%\requirements.txt" (
+    pip install -r "%SOURCE_DIR%\requirements.txt" >nul 2>&1
+    if %errorlevel% equ 0 (
+        echo   Python deps: OK
+    ) else (
+        echo   Python deps: Already installed or skipped
+    )
 )
 
 echo [6/6] Creating .env...

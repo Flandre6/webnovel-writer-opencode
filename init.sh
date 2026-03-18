@@ -79,23 +79,29 @@ fi
 echo "Installing to .opencode..."
 mkdir -p "${PROJECT_DIR}/.opencode"
 
-# Copy directories
-[ -d "$SOURCE_DIR/skills" ] && cp -r "$SOURCE_DIR/skills" "${PROJECT_DIR}/.opencode/" && echo "skills: OK"
-[ -d "$SOURCE_DIR/genres" ] && cp -r "$SOURCE_DIR/genres" "${PROJECT_DIR}/.opencode/" && echo "genres: OK"
-[ -d "$SOURCE_DIR/references" ] && cp -r "$SOURCE_DIR/references" "${PROJECT_DIR}/.opencode/" && echo "references: OK"
-[ -d "$SOURCE_DIR/templates" ] && cp -r "$SOURCE_DIR/templates" "${PROJECT_DIR}/.opencode/" && echo "templates: OK"
-[ -d "$SOURCE_DIR/scripts" ] && cp -r "$SOURCE_DIR/scripts" "${PROJECT_DIR}/.opencode/" && echo "scripts: OK"
+# Copy directories from .opencode/
+[ -d "$SOURCE_DIR/.opencode/skills" ] && cp -r "$SOURCE_DIR/.opencode/skills" "${PROJECT_DIR}/.opencode/" && echo "skills: OK"
+[ -d "$SOURCE_DIR/.opencode/genres" ] && cp -r "$SOURCE_DIR/.opencode/genres" "${PROJECT_DIR}/.opencode/" && echo "genres: OK"
+[ -d "$SOURCE_DIR/.opencode/references" ] && cp -r "$SOURCE_DIR/.opencode/references" "${PROJECT_DIR}/.opencode/" && echo "references: OK"
+[ -d "$SOURCE_DIR/.opencode/templates" ] && cp -r "$SOURCE_DIR/.opencode/templates" "${PROJECT_DIR}/.opencode/" && echo "templates: OK"
+[ -d "$SOURCE_DIR/.opencode/scripts" ] && cp -r "$SOURCE_DIR/.opencode/scripts" "${PROJECT_DIR}/.opencode/" && echo "scripts: OK"
 
-# Copy opencode.json and prompts to project root
+# Copy root files
 [ -f "$SOURCE_DIR/opencode.json" ] && cp "$SOURCE_DIR/opencode.json" "${PROJECT_DIR}/" && echo "opencode.json: OK"
 [ -d "$SOURCE_DIR/prompts" ] && cp -r "$SOURCE_DIR/prompts" "${PROJECT_DIR}/" && echo "prompts: OK"
+[ -f "$SOURCE_DIR/init.sh" ] && cp "$SOURCE_DIR/init.sh" "${PROJECT_DIR}/" && echo "init.sh: OK"
+[ -f "$SOURCE_DIR/init.bat" ] && cp "$SOURCE_DIR/init.bat" "${PROJECT_DIR}/" && echo "init.bat: OK"
+[ -f "$SOURCE_DIR/README.md" ] && cp "$SOURCE_DIR/README.md" "${PROJECT_DIR}/" && echo "README.md: OK"
+[ -f "$SOURCE_DIR/requirements.txt" ] && cp "$SOURCE_DIR/requirements.txt" "${PROJECT_DIR}/" && echo "requirements.txt: OK"
+[ -f "$SOURCE_DIR/AGENTS.md" ] && cp "$SOURCE_DIR/AGENTS.md" "${PROJECT_DIR}/" && echo "AGENTS.md: OK"
+[ -f "$SOURCE_DIR/.gitignore" ] && cp "$SOURCE_DIR/.gitignore" "${PROJECT_DIR}/" && echo ".gitignore: OK"
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-if pip install -r "https://raw.githubusercontent.com/${REPO}/${BRANCH}/requirements.txt" 2>/dev/null; then
-    echo "Python dependencies: OK"
+if [ -f "$SOURCE_DIR/requirements.txt" ]; then
+    pip install -r "$SOURCE_DIR/requirements.txt" 2>/dev/null && echo "Python dependencies: OK" || echo "Python dependencies: SKIPPED"
 else
-    echo "Python dependencies: SKIPPED (may already be installed)"
+    pip install -r "https://raw.githubusercontent.com/${REPO}/${BRANCH}/requirements.txt" 2>/dev/null && echo "Python dependencies: OK" || echo "Python dependencies: SKIPPED"
 fi
 
 # Copy or create .env
@@ -105,7 +111,7 @@ if [ -f "$SOURCE_DIR/.env" ]; then
 else
     cat > "${PROJECT_DIR}/.env" << 'EOF'
 # Webnovel Writer Config
-# 编辑填入你的 API Key
+# Fill in your API Key
 
 EMBED_BASE_URL=https://api-inference.modelscope.cn/v1
 EMBED_MODEL=Qwen/Qwen3-Embedding-8B
@@ -126,4 +132,4 @@ echo "Done!"
 echo ""
 echo "Next steps:"
 echo "  1. Edit .env and add your API Key"
-echo "  2. In OpenCode, use /webnovel-init"
+echo "  2. Restart OpenCode"
