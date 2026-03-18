@@ -40,6 +40,19 @@ WORKSPACE_ROOT/
     └── output/         # 输出格式
 ```
 
+## 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `OPENCODE_HOME` | OpenCode 全局配置目录 | `~/.opencode` |
+| `OPENCODE_PROJECT_DIR` | 工作区根目录 | 当前目录 |
+| `WEBNOVEL_CLAUDE_HOME` | Claude 兼容配置目录 | `~/.claude` |
+
+`.env` 加载顺序：
+1. 项目目录 `.env`（最高优先级）
+2. `~/.opencode/webnovel-writer/.env`
+3. `~/.claude/webnovel-writer/.env`（兼容）
+
 ## 常用运维命令
 
 ```bash
