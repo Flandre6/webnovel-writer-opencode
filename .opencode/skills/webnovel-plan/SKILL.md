@@ -9,24 +9,16 @@ Purpose: refine 总纲 into volume + chapter outlines. Do not redesign the globa
 Setting policy: 先基于 init 产出的总纲+世界观补齐设定集基线；再在卷纲完成后，直接对现有设定集做增量补充。
 
 ## Project Root Guard
-- Claude Code 的“工作区根目录”不一定等于“书项目根目录”。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
 - 必须先解析 `PROJECT_ROOT` 为真实书项目根（必须包含 `.webnovel/state.json`），后续所有读写路径都以该目录为准。
 
 环境设置（bash 命令执行前）：
 ```bash
 export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-if [ -z "${CLAUDE_PLUGIN_ROOT}" ] || [ ! -d "${CLAUDE_PLUGIN_ROOT}/skills/webnovel-plan" ]; then
-  echo "ERROR: 未设置 CLAUDE_PLUGIN_ROOT 或缺少目录: ${CLAUDE_PLUGIN_ROOT}/skills/webnovel-plan" >&2
-  exit 1
-fi
-export SKILL_ROOT="${CLAUDE_PLUGIN_ROOT}/skills/webnovel-plan"
-
-if [ -z "${CLAUDE_PLUGIN_ROOT}" ] || [ ! -d "${CLAUDE_PLUGIN_ROOT}/scripts" ]; then
-  echo "ERROR: 未设置 CLAUDE_PLUGIN_ROOT 或缺少目录: ${CLAUDE_PLUGIN_ROOT}/scripts" >&2
-  exit 1
-fi
-export SCRIPTS_DIR="${CLAUDE_PLUGIN_ROOT}/scripts"
+# 获取 skill 所在目录
+export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
+# OpenCode 中 scripts 在 .opencode/scripts/
+export SCRIPTS_DIR="${SKILL_ROOT}/../../scripts"
 
 export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
 ```
