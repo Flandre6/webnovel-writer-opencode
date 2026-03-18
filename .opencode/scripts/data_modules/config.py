@@ -18,13 +18,17 @@ from runtime_compat import normalize_windows_path
 from .context_weights import TEMPLATE_WEIGHTS_DYNAMIC_DEFAULT
 
 def _get_user_claude_root() -> Path:
-    raw = os.environ.get("WEBNOVEL_CLAUDE_HOME") or os.environ.get("CLAUDE_HOME")
+    raw = (
+        os.environ.get("WEBNOVEL_CLAUDE_HOME")
+        or os.environ.get("CLAUDE_HOME")
+        or os.environ.get("OPENCODE_HOME")
+    )
     if raw:
         try:
             return normalize_windows_path(raw).expanduser().resolve()
         except Exception:
             return normalize_windows_path(raw).expanduser()
-    return (Path.home() / ".claude").resolve()
+    return (Path.home() / ".opencode").resolve()
 
 
 def _load_dotenv_file(env_path: Path, *, override: bool = False) -> bool:
@@ -54,7 +58,7 @@ def _load_dotenv():
 
     约定：
     - 项目级 `.env`（当前工作目录下）优先；
-    - 全局 `.env` 作为兜底：`~/.claude/webnovel-writer/.env`
+    - 全局 `.env` 作为兜底：`~/.opencode/webnovel-writer/.env`
     """
     # 1) 当前目录（常见：用户从项目根目录执行）
     _load_dotenv_file(Path.cwd() / ".env", override=False)
