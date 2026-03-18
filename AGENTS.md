@@ -15,19 +15,22 @@ pip install -e .
 # 运行所有测试
 pytest
 
-# 运行单个测试
-pytest scripts/data_modules/tests/test_config.py::test_config_paths_and_defaults
-
-# 运行测试并生成覆盖率报告（最低要求 90%）
-pytest --cov --cov-report=term-missing
+# 运行单个测试（推荐方式）
+pytest .opencode/scripts/data_modules/tests/test_config.py::test_config_paths_and_defaults
 
 # 运行特定测试文件
-pytest scripts/data_modules/tests/test_api_client.py
+pytest .opencode/scripts/data_modules/tests/test_api_client.py
+
+# 运行测试并生成覆盖率报告（最低要求 90%）
+pytest --cov --cov-report=term-missing .opencode/scripts/data_modules/tests/
+
+# 只运行失败的测试
+pytest --lf
 ```
 
-**测试配置** (`pytest.ini`):
-- 测试路径: `scripts/data_modules/tests`
-- Python 路径: `scripts`
+**测试配置**:
+- 测试路径: `.opencode/scripts/data_modules/tests`
+- Python 路径: `.opencode/scripts`
 - 覆盖率要求: 最低 90%
 
 ## 代码风格规范
@@ -43,11 +46,12 @@ pytest scripts/data_modules/tests/test_api_client.py
 """
 ```
 
-**导入顺序**: 标准库 → 第三方 → 本地
+**导入顺序**: 标准库 → 第三方 → 本地（相对导入）
 ```python
 import os
 import asyncio
 from pathlib import Path
+from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Any
 
 import aiohttp
@@ -57,7 +61,7 @@ from .config import get_config
 from .observability import logger
 ```
 
-**类型注解**: 始终使用显式类型注解
+**类型注解**: 始终使用显式类型注解，避免 `Any`
 ```python
 def process_entities(entities: List[EntityState]) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
@@ -78,7 +82,7 @@ class EntityState:
     attributes: Dict[str, Any] = field(default_factory=dict)
 ```
 
-**日志记录**:
+**日志记录**: 使用 `logging.getLogger(__name__)`
 ```python
 import logging
 logger = logging.getLogger(__name__)
@@ -87,7 +91,7 @@ logger.info("Processing chapter %d", chapter_num)
 logger.error("Failed to load config: %s", error)
 ```
 
-**错误处理**: 使用 try/except 捕获具体异常
+**错误处理**: 捕获具体异常，避免裸 except
 ```python
 try:
     config = DataModulesConfig.from_project_root(project_root)
@@ -110,27 +114,13 @@ async def fetch_embeddings(self, texts: List[str]) -> List[List[float]]:
         session = await self._get_session()
 ```
 
-### JavaScript/React
-
-**组件结构**:
-```jsx
-import { useState, useEffect, useCallback } from 'react'
-
-export default function ComponentName() {
-    const [data, setData] = useState(null)
-    
-    useEffect(() => {
-        fetchData()
-    }, [])
-    
-    return <div className="component">{/* JSX */}</div>
-}
+**异常兼容**: 使用 try/except 处理跨平台兼容
+```python
+try:
+    from ..runtime_compat import normalize_windows_path
+except ImportError:
+    from runtime_compat import normalize_windows_path
 ```
-
-**命名规范**:
-- 组件: PascalCase (`DashboardPage`)
-- 函数: camelCase (`fetchJSON`)
-- CSS 类: kebab-case (`sidebar-header`)
 
 ## 项目结构
 
@@ -138,16 +128,20 @@ export default function ComponentName() {
 项目目录/
 ├── .opencode/              # OpenCode 配置
 │   ├── skills/            # 7个 Skills
-│   ├── scripts/          # Python 核心
-│   ├── references/       # 参考文档
-│   ├── genres/           # 题材参考
-│   └── templates/        # 模板
+│   ├── scripts/           # Python 核心
+│   │   └── data_modules/  # 核心模块
+│   │       ├── state_manager.py
+│   │       ├── context_manager.py
+│   │       ├── index_manager.py
+│   │       ├── api_client.py
+│   │       └── tests/     # 测试文件
+│   ├── references/        # 参考文档
+│   ├── genres/            # 题材参考
+│   └── templates/         # 输出模板
 ├── opencode.json          # Agents 配置
 ├── prompts/               # Agent 提示词
-├── .env.example
-├── init.sh / init.bat    # 安装脚本
-├── AGENTS.md
-└── README.md
+├── .env                   # API 配置
+└── init.sh / init.bat    # 安装脚本
 ```
 
 ## 关键约定
@@ -164,3 +158,10 @@ export default function ComponentName() {
 2. 使用 `monkeypatch` 进行环境变量模拟
 3. 测试成功和错误路径
 4. 异步测试需要 `@pytest.mark.asyncio` 装饰器
+5. 测试函数命名: `test_function_name_when_condition()`
+
+## 配置约定
+
+- API 配置通过环境变量读取，支持 `.env` 文件
+- `.env` 加载顺序: 当前目录 → 用户全局目录
+- 已有环境变量不会被 `.env` 覆盖（显式优先）
