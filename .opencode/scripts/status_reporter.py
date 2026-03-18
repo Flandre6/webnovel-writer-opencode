@@ -88,13 +88,7 @@ from datetime import datetime
 from collections import defaultdict
 from project_locator import resolve_project_root
 from chapter_paths import extract_chapter_num_from_filename
-try:
-    from .runtime_compat import
-except ImportError:
-    try:
-    from .runtime_compat import enable_windows_utf8_stdio
-except ImportError:
-    from runtime_compat import enable_windows_utf8_stdio
+from runtime_compat import enable_windows_utf8_stdio
 
 # 导入配置
 try:

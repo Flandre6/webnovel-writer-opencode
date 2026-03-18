@@ -15,10 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
-try:
-    from .runtime_compat import enable_windows_utf8_stdio
-except ImportError:
-    from runtime_compat import enable_windows_utf8_stdio
+from runtime_compat import enable_windows_utf8_stdio
 
 try:
     from project_locator import resolve_project_root

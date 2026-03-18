@@ -53,13 +53,7 @@ import sys
 import shutil
 from pathlib import Path
 
-try:
-    from .runtime_compat import
-except ImportError:
-    try:
-    from .runtime_compat import enable_windows_utf8_stdio
-except ImportError:
-    from runtime_compat import enable_windows_utf8_stdio
+from runtime_compat import enable_windows_utf8_stdio
 from datetime import datetime
 from typing import Optional, List, Tuple
 

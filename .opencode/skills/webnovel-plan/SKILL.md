@@ -1,10 +1,6 @@
 ---
 name: webnovel-plan
-description: |
-  构建卷纲和章节大纲，继承创意约束，准备可直接写作的章节计划。
-  
-  触发条件：用户提到规划大纲、章节规划、卷纲、/webnovel-plan 等关键词。
-trigger: webnovel
+description: Builds volume and chapter outlines from the total outline, inherits creative constraints, and prepares writing-ready chapter plans. Use when the user asks for outlining or runs /webnovel-plan.
 ---
 
 # Outline Planning
@@ -13,33 +9,25 @@ Purpose: refine 总纲 into volume + chapter outlines. Do not redesign the globa
 Setting policy: 先基于 init 产出的总纲+世界观补齐设定集基线；再在卷纲完成后，直接对现有设定集做增量补充。
 
 ## Project Root Guard
-- 工作区根目录不一定等于书项目根目录。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
+- Claude Code 的“工作区根目录”不一定等于“书项目根目录”。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
 - 必须先解析 `PROJECT_ROOT` 为真实书项目根（必须包含 `.webnovel/state.json`），后续所有读写路径都以该目录为准。
 
 环境设置（bash 命令执行前）：
 ```bash
-# 获取 skill 所在目录的绝对路径
-export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
+export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-# 确定 .opencode 根目录
-export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/../.." && pwd)"
-
-# SCRIPTS_DIR 相对于 .opencode 目录
-export SCRIPTS_DIR="${WEBNOVEL_ROOT}/scripts"
-
-# WORKSPACE_ROOT：工作区根目录
-export WORKSPACE_ROOT="${WEBNOVEL_PROJECT_ROOT:-$PWD}"
-
-# 检查必要文件
-if [ ! -f "${SCRIPTS_DIR}/webnovel.py" ]; then
-  echo "ERROR: 缺少脚本: ${SCRIPTS_DIR}/webnovel.py" >&2
+if [ -z "${CLAUDE_PLUGIN_ROOT}" ] || [ ! -d "${CLAUDE_PLUGIN_ROOT}/skills/webnovel-plan" ]; then
+  echo "ERROR: 未设置 CLAUDE_PLUGIN_ROOT 或缺少目录: ${CLAUDE_PLUGIN_ROOT}/skills/webnovel-plan" >&2
   exit 1
 fi
-    exit 1
-  fi
-fi
+export SKILL_ROOT="${CLAUDE_PLUGIN_ROOT}/skills/webnovel-plan"
 
-# 解析真实书项目根（后续所有 Read/Write 路径都必须以 $PROJECT_ROOT 为前缀）
+if [ -z "${CLAUDE_PLUGIN_ROOT}" ] || [ ! -d "${CLAUDE_PLUGIN_ROOT}/scripts" ]; then
+  echo "ERROR: 未设置 CLAUDE_PLUGIN_ROOT 或缺少目录: ${CLAUDE_PLUGIN_ROOT}/scripts" >&2
+  exit 1
+fi
+export SCRIPTS_DIR="${CLAUDE_PLUGIN_ROOT}/scripts"
+
 export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
 ```
 

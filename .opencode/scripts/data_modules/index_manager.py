@@ -37,10 +37,7 @@ import json
 import time
 from pathlib import Path
 
-try:
-    from ..runtime_compat import enable_windows_utf8_stdio
-except ImportError:
-    from runtime_compat import enable_windows_utf8_stdio
+from runtime_compat import enable_windows_utf8_stdio
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from contextlib import contextmanager

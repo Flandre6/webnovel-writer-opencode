@@ -1,38 +1,31 @@
 ---
 name: webnovel-resume
-description: |
-  恢复中断的网文任务，精确跟踪工作流状态。检测中断点并提供安全的恢复选项。
-  
-  触发条件：用户提到恢复写作、继续写作、/webnovel-resume 等关键词。
-trigger: webnovel
+description: Recovers interrupted webnovel tasks with precise workflow state tracking. Detects interruption point and provides safe recovery options. Activates when user wants to resume or /webnovel-resume.
+allowed-tools: Read Bash AskUserQuestion
 ---
 
 # Task Resume Skill
 
 ## Project Root Guard（必须先确认）
 
-- 工作区根目录不一定等于书项目根目录。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
+- Claude Code 的“工作区根目录”不一定等于“书项目根目录”。常见结构：工作区为 `D:\wk\xiaoshuo`，书项目为 `D:\wk\xiaoshuo\凡人资本论`。
 - 必须先解析真实书项目根（必须包含 `.webnovel/state.json`），后续所有读写路径都以该目录为准。
 
 环境设置（bash 命令执行前）：
 ```bash
-# 获取 skill 所在目录的绝对路径
-export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
+export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-# 确定 .opencode 根目录
-export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/../.." && pwd)"
-
-# SCRIPTS_DIR 相对于 .opencode 目录
-export SCRIPTS_DIR="${WEBNOVEL_ROOT}/scripts"
-
-# WORKSPACE_ROOT：工作区根目录
-export WORKSPACE_ROOT="${WEBNOVEL_PROJECT_ROOT:-$PWD}"
-
-# 检查必要文件
-if [ ! -f "${SCRIPTS_DIR}/webnovel.py" ]; then
-  echo "ERROR: 缺少脚本: ${SCRIPTS_DIR}/webnovel.py" >&2
+if [ -z "${CLAUDE_PLUGIN_ROOT}" ] || [ ! -d "${CLAUDE_PLUGIN_ROOT}/skills/webnovel-resume" ]; then
+  echo "ERROR: 未设置 CLAUDE_PLUGIN_ROOT 或缺少目录: ${CLAUDE_PLUGIN_ROOT}/skills/webnovel-resume" >&2
   exit 1
 fi
+export SKILL_ROOT="${CLAUDE_PLUGIN_ROOT}/skills/webnovel-resume"
+
+if [ -z "${CLAUDE_PLUGIN_ROOT}" ] || [ ! -d "${CLAUDE_PLUGIN_ROOT}/scripts" ]; then
+  echo "ERROR: 未设置 CLAUDE_PLUGIN_ROOT 或缺少目录: ${CLAUDE_PLUGIN_ROOT}/scripts" >&2
+  exit 1
+fi
+export SCRIPTS_DIR="${CLAUDE_PLUGIN_ROOT}/scripts"
 
 export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
 ```

@@ -1,13 +1,10 @@
 ---
 name: webnovel-init
-description: |
-  深度初始化网文项目。通过分阶段交互收集完整创作信息，生成可直接进入规划与写作的项目骨架与约束文件。
-  
-  触发条件：用户提到初始化、新建项目、创建小说、/webnovel-init 等关键词。
-trigger: webnovel
+description: 深度初始化网文项目。通过分阶段交互收集完整创作信息，生成可直接进入规划与写作的项目骨架与约束文件。
+allowed-tools: Read Write Edit Grep Bash Task AskUserQuestion WebSearch WebFetch
 ---
 
-# Project Initialization (Deep Mode v2)
+# Project Initialization (Deep Mode)
 
 ## 目标
 
@@ -33,83 +30,73 @@ trigger: webnovel
 - L3：市场趋势类、时效类资料仅在用户明确要求时加载。
 
 路径约定：
-- `references/...` 相对 `.opencode/` 目录（从 skill 目录出发：`../../references/...`）
-- `templates/...` 相对 `.opencode/` 目录（从 skill 目录出发：`../../templates/...`）
-- `genres/...` 相对 `.opencode/` 目录（从 skill 目录出发：`../../genres/...`）
+- `references/...` 相对当前 skill 目录（`${CLAUDE_PLUGIN_ROOT}/skills/webnovel-init/references/...`）。
+- `templates/...` 相对插件根目录（`${CLAUDE_PLUGIN_ROOT}/templates/...`）。
 
 默认加载清单：
-- L1（启动前）：`../../references/genre-tropes.md`
+- L1（启动前）：`references/genre-tropes.md`
 - L2（按需）：
-  - 题材模板：`../../templates/genres/{genre}.md`
+  - 题材模板：`templates/genres/{genre}.md`
   - 金手指：`../../templates/golden-finger-templates.md`
-  - 世界观：`../../references/worldbuilding/faction-systems.md`
-  - 创意约束：按下方"逐文件引用清单"触发加载
+  - 世界观：`references/worldbuilding/faction-systems.md`
+  - 创意约束：按下方“逐文件引用清单”触发加载
 - L3（显式请求）：
-  - `../../references/creativity/market-trends-2026.md`
+  - `references/creativity/market-trends-2026.md`
 
 ## References（逐文件引用清单）
 
 ### 根目录
 
-- `../../references/genre-tropes.md`
+- `references/genre-tropes.md`
   - 用途：Step 1 题材归一化、题材特征提示。
   - 触发：所有项目必读。
-- `../../references/system-data-flow.md`
+- `references/system-data-flow.md`
   - 用途：初始化产物与后续 `/plan`、`/write` 的数据流一致性检查。
   - 触发：Step 0 预检必读。
 
 ### worldbuilding
 
-- `../../references/worldbuilding/character-design.md`
+- `references/worldbuilding/character-design.md`
   - 用途：Step 2 角色维度补问（目标、缺陷、动机、反差）。
   - 触发：用户人物信息抽象或扁平时加载。
-- `../../references/worldbuilding/faction-systems.md`
+- `references/worldbuilding/faction-systems.md`
   - 用途：Step 4 势力格局与组织层级设计。
   - 触发：Step 4 默认加载。
-- `../../references/worldbuilding/power-systems.md`
+- `references/worldbuilding/power-systems.md`
   - 用途：Step 4 力量体系类型与边界定义。
   - 触发：涉及修仙/玄幻/高武/异能时加载。
-- `../../references/worldbuilding/setting-consistency.md`
+- `references/worldbuilding/setting-consistency.md`
   - 用途：Step 6 一致性复述前做设定冲突检查。
   - 触发：Step 6 默认加载。
-- `../../references/worldbuilding/world-rules.md`
+- `references/worldbuilding/world-rules.md`
   - 用途：Step 4 世界规则与禁忌项收束。
   - 触发：Step 4 默认加载。
 
 ### creativity
 
-- `../../references/creativity/creativity-constraints.md`
+- `references/creativity/creativity-constraints.md`
   - 用途：Step 5 创意约束包主 schema。
   - 触发：Step 5 必读。
-- `../../references/creativity/category-constraint-packs.md`
+- `references/creativity/category-constraint-packs.md`
   - 用途：Step 5 按平台/题材选择约束包模板。
   - 触发：Step 5 必读。
-- `../../references/creativity/creative-combination.md`
+- `references/creativity/creative-combination.md`
   - 用途：复合题材（A+B）融合规则。
   - 触发：用户选择复合题材时加载。
-- `../../references/creativity/inspiration-collection.md`
+- `references/creativity/inspiration-collection.md`
   - 用途：用户卡住时提供卖点/钩子候选。
   - 触发：Step 1 或 Step 5 卡顿时加载。
-- `../../references/creativity/selling-points.md`
+- `references/creativity/selling-points.md`
   - 用途：Step 5 卖点生成与筛选。
   - 触发：Step 5 必读。
-- `../../references/creativity/market-positioning.md`
+- `references/creativity/market-positioning.md`
   - 用途：目标读者/平台定位与商业化语义统一。
   - 触发：Step 1 用户提及平台或商业目标时加载。
-- `../../references/creativity/market-trends-2026.md`
+- `references/creativity/market-trends-2026.md`
   - 用途：时间敏感市场趋势参考。
-  - 触发：仅用户明确要求"参考当下趋势"时加载。
-- `../../references/creativity/anti-trope-xianxia.md`
+  - 触发：仅用户明确要求“参考当下趋势”时加载。
+- `references/creativity/anti-trope-xianxia.md`
   - 用途：反套路库（修仙/玄幻/高武/西幻）。
-  - 触发：题材命中对应映射时加载。
-- `../../references/creativity/anti-trope-urban.md`
-  - 用途：反套路库（都市/历史）。
-  - 触发：题材命中对应映射时加载。
-- `../../references/creativity/anti-trope-game.md`
-  - 用途：反套路库（游戏/科幻/末世）。
-  - 触发：题材命中对应映射时加载。
-- `../../references/creativity/anti-trope-rules-mystery.md`
-  - 用途：反套路库（规则/悬疑/灵异/克苏鲁）。
   - 触发：题材命中对应映射时加载。
 - `references/creativity/anti-trope-urban.md`
   - 用途：反套路库（都市/历史）。
@@ -123,7 +110,7 @@ trigger: webnovel
 
 ## 工具策略（按需）
 
-- `Read/Grep`：读取项目上下文与参考文件（`README.md`、`AGENTS.md`、`../../templates/genres/*`、`../../references/*`）。
+- `Read/Grep`：读取项目上下文与参考文件（`README.md`、`CLAUDE.md`、`templates/genres/*`、`references/*`）。
 - `Bash`：执行 `init_project.py`、文件存在性检查、最小验证命令。
 - `Task`：拆分并行子任务（如题材映射、约束包候选生成、文件验证）。
 - `AskUserQuestion`：用于关键分歧裁决、候选方案选择、最终确认。
@@ -131,7 +118,7 @@ trigger: webnovel
 - `WebFetch`：用于抓取已确定来源页面内容并做事实核验。
 - 外部检索触发条件：
   - 用户明确要求参考市场趋势或平台风向；
-  - 创意约束需要"时间敏感依据"；
+  - 创意约束需要“时间敏感依据”；
   - 对题材信息存在明显不确定。
 
 ## 交互流程（Deep）
@@ -140,36 +127,26 @@ trigger: webnovel
 
 环境设置（bash 命令执行前）：
 ```bash
-# 获取 skill 所在目录的绝对路径
-export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
+export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-# 确定 .opencode 根目录
-export WEBNOVEL_ROOT="$(cd "${SKILL_ROOT}/../.." && pwd)"
-
-# SCRIPTS_DIR 相对于 .opencode 目录
-export SCRIPTS_DIR="${WEBNOVEL_ROOT}/scripts"
-
-# WORKSPACE_ROOT：工作区根目录
-export WORKSPACE_ROOT="${WEBNOVEL_PROJECT_ROOT:-$PWD}"
-
-# 检查必要文件
-if [ ! -f "${SCRIPTS_DIR}/webnovel.py" ]; then
-  echo "ERROR: 缺少脚本: ${SCRIPTS_DIR}/webnovel.py" >&2
+if [ -z "${CLAUDE_PLUGIN_ROOT}" ] || [ ! -d "${CLAUDE_PLUGIN_ROOT}/scripts" ]; then
+  echo "ERROR: 未设置 CLAUDE_PLUGIN_ROOT 或缺少目录: ${CLAUDE_PLUGIN_ROOT}/scripts" >&2
   exit 1
 fi
+export SCRIPTS_DIR="${CLAUDE_PLUGIN_ROOT}/scripts"
 ```
 
 必须做：
 - 确认当前目录可写。
-- 解析脚本目录并确认入口存在：
-  - 固定路径：`${SCRIPTS_DIR}`
+- 解析脚本目录并确认入口存在（仅支持插件目录）：
+  - 固定路径：`${CLAUDE_PLUGIN_ROOT}/scripts`
   - 入口脚本：`${SCRIPTS_DIR}/webnovel.py`
 - 建议先打印解析结果，避免写到错误目录：
   - `python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where`
 - 加载最小参考：
-  - `../../references/system-data-flow.md`（用于校对 init 产物与 plan/write 输入链路）
-  - `../../references/genre-tropes.md`
-  - `../../templates/genres/`（仅在用户选定题材后按需读取）
+  - `references/system-data-flow.md`（用于校对 init 产物与 plan/write 输入链路）
+  - `references/genre-tropes.md`
+  - `templates/genres/`（仅在用户选定题材后按需读取）
 
 输出：
 - 进入 Deep 采集前的“已知信息清单”和“待收集清单”。
@@ -348,7 +325,7 @@ fi
 
 - `project_root` 必须由书名安全化生成（去非法字符，空格转 `-`）。
 - 若安全化结果为空或以 `.` 开头，自动前缀 `proj-`。
-- 禁止在 `.opencode/` 目录下生成项目文件。
+- 禁止在插件目录下生成项目文件（`${CLAUDE_PLUGIN_ROOT}`）。
 
 ## 执行生成
 

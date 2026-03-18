@@ -1,10 +1,7 @@
 ---
 name: webnovel-learn
-description: |
-  从当前会话提取成功模式并写入 project_memory.json，用于学习和改进写作流程。
-  
-  触发条件：用户提到学习、提取模式、/webnovel-learn 等关键词。
-trigger: webnovel
+description: 从当前会话提取成功模式并写入 project_memory.json
+allowed-tools: Read Write Bash
 ---
 
 # /webnovel-learn

@@ -4,12 +4,13 @@
 webnovel 统一入口脚本（无须 `cd`）
 
 用法示例：
-  python -m scripts.webnovel where
-  python -m scripts.webnovel index stats
+  python "<SCRIPTS_DIR>/webnovel.py" preflight
+  python "<SCRIPTS_DIR>/webnovel.py" where
+  python "<SCRIPTS_DIR>/webnovel.py" index stats
 
 说明：
-- 该脚本转发到 `data_modules.webnovel`。
-- 适配 OpenCode Skills 调用。
+- 该脚本仅负责把 `.claude/scripts` 加入 sys.path，然后转发到 `data_modules.webnovel`。
+- 适配 skills/agents 在项目级或用户级（~/.claude）安装时的调用方式。
 """
 
 from __future__ import annotations
@@ -17,25 +18,19 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Add scripts directory to path for internal imports
-_scripts_dir = Path(__file__).resolve().parent
-if str(_scripts_dir) not in sys.path:
-    sys.path.insert(0, str(_scripts_dir))
-
-try:
-    from .runtime_compat import enable_windows_utf8_stdio
-except ImportError:
-    from runtime_compat import enable_windows_utf8_stdio
+from runtime_compat import enable_windows_utf8_stdio
 
 
 def main() -> None:
-    """Main entry point."""
-    # Import and run the data_modules main
+    scripts_dir = Path(__file__).resolve().parent
+    sys.path.insert(0, str(scripts_dir))
+
+    # 延迟导入，避免 sys.path 未就绪
     from data_modules.webnovel import main as _main
+
     _main()
 
 
 if __name__ == "__main__":
     enable_windows_utf8_stdio(skip_in_pytest=True)
     main()
-

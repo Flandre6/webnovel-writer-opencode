@@ -15,10 +15,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-try:
-    from .runtime_compat import enable_windows_utf8_stdio
-except ImportError:
-    from runtime_compat import enable_windows_utf8_stdio
+from runtime_compat import enable_windows_utf8_stdio
 from typing import Any, Dict, Optional, Union
 
 # 尝试导入 filelock（可选依赖）
