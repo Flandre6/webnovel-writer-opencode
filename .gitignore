@@ -31,14 +31,6 @@ Thumbs.db
 opencode.json
 prompts/
 
-# OpenCode 安装目录
-.opencode/
-
-# Python 测试临时文件
-scripts/.tmp_pytest/
-scripts/.tmp_pytest_manual/
-scripts/zzz_test.db*
-
 # 项目运行时生成的数据（小说项目目录）
 # 以下是用户在运行 webnovel-init 后会生成的目录，应该忽略
 # 如果你想保留模板文件，可以移除这些注释

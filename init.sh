@@ -40,8 +40,8 @@ done
 
 # Try China mirror as fallback
 if [ $SUCCESS -eq 0 ]; then
-    echo "Trying China mirror (ghproxy)..."
-    if curl -sL --max-time 120 "https://ghproxy.com/https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip" -o "repo.zip" 2>/dev/null; then
+    echo "Trying China mirror (github.akams.cn)..."
+    if curl -sL --max-time 120 "https://github.akams.cn/${REPO}/archive/refs/heads/${BRANCH}.zip" -o "repo.zip" 2>/dev/null; then
         if [ -s "repo.zip" ]; then
             SUCCESS=1
         fi
