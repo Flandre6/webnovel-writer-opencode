@@ -57,11 +57,6 @@ xcopy /E /I /Y "%SOURCE_DIR%\.opencode\scripts" ".opencode\scripts\" >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\opencode.json" "." >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\prompts" "prompts\" >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\init.bat" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\init.sh" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\README.md" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\requirements.txt" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\AGENTS.md" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\.gitignore" "." >nul 2>&1
 echo   Files copied
 
 echo [5/6] Installing Python dependencies...

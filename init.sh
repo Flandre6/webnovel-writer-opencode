@@ -91,10 +91,6 @@ mkdir -p "${PROJECT_DIR}/.opencode"
 [ -d "$SOURCE_DIR/prompts" ] && cp -r "$SOURCE_DIR/prompts" "${PROJECT_DIR}/" && echo "prompts: OK"
 [ -f "$SOURCE_DIR/init.sh" ] && cp "$SOURCE_DIR/init.sh" "${PROJECT_DIR}/" && echo "init.sh: OK"
 [ -f "$SOURCE_DIR/init.bat" ] && cp "$SOURCE_DIR/init.bat" "${PROJECT_DIR}/" && echo "init.bat: OK"
-[ -f "$SOURCE_DIR/README.md" ] && cp "$SOURCE_DIR/README.md" "${PROJECT_DIR}/" && echo "README.md: OK"
-[ -f "$SOURCE_DIR/requirements.txt" ] && cp "$SOURCE_DIR/requirements.txt" "${PROJECT_DIR}/" && echo "requirements.txt: OK"
-[ -f "$SOURCE_DIR/AGENTS.md" ] && cp "$SOURCE_DIR/AGENTS.md" "${PROJECT_DIR}/" && echo "AGENTS.md: OK"
-[ -f "$SOURCE_DIR/.gitignore" ] && cp "$SOURCE_DIR/.gitignore" "${PROJECT_DIR}/" && echo ".gitignore: OK"
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
