@@ -26,13 +26,15 @@
 
 ## 总体架构图
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Claude Code                           │
+│                      OpenCode                               │
 ├─────────────────────────────────────────────────────────────┤
-│  Skills (7个): init / plan / write / review / query / ... │
+│  Skills (7个): init / plan / write / review / query /      │
+│                resume / learn                               │
 ├─────────────────────────────────────────────────────────────┤
-│  Agents (8个): Context / Data / 多维 Checker               │
+│  Agents (10个): context-agent / data-agent /                │
+│                 6 维 Checker                                 │
 ├─────────────────────────────────────────────────────────────┤
 │  Data Layer: state.json / index.db / vectors.db            │
 └─────────────────────────────────────────────────────────────┘
@@ -42,7 +44,7 @@
 
 ### Context Agent（读）
 
-职责：在写作前构建“创作任务书”，提供本章上下文、约束和追读力策略。
+职责：在写作前构建"创作任务书"，提供本章上下文、约束和追读力策略。
 
 ### Data Agent（写）
 
@@ -58,3 +60,19 @@
 | OOC Checker | 人物行为是否偏离人设 |
 | Continuity Checker | 场景与叙事连贯性 |
 | Reader-pull Checker | 钩子强度、期待管理、追读力 |
+
+## 项目结构
+
+```
+项目目录/
+├── .opencode/              # OpenCode 配置
+│   ├── skills/            # 7个 Skills
+│   ├── scripts/           # Python 核心脚本
+│   ├── references/        # 参考文档
+│   ├── genres/            # 题材参考（38+）
+│   └── templates/         # 输出模板
+├── opencode.json          # Agents 配置
+├── prompts/               # Agent 提示词
+├── .env                   # API 配置
+└── init.sh / init.bat    # 安装脚本
+```

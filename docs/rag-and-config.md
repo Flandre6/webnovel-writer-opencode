@@ -2,7 +2,7 @@
 
 ## RAG 检索架构
 
-```text
+```
 查询 → QueryRouter(auto) → vector / bm25 / hybrid / graph_hybrid
                      └→ RRF 融合 + Rerank → Top-K
 ```
@@ -34,3 +34,23 @@ RERANK_API_KEY=your_rerank_api_key
 
 - 未配置 Embedding Key 时，语义检索会回退到 BM25。
 - 推荐每本书单独配置 `${PROJECT_ROOT}/.env`，避免多项目串配置。
+
+## API 获取地址
+
+| 服务 | 地址 |
+|------|------|
+| ModelScope (Embedding) | https://www.modelscope.cn |
+| Jina AI (Reranker) | https://jina.ai |
+
+## Python CLI 命令
+
+```bash
+# 索引重建
+python .opencode/scripts/webnovel.py index process-chapter --chapter 1
+
+# 状态报告
+python .opencode/scripts/webnovel.py status --focus all
+
+# RAG 统计
+python .opencode/scripts/webnovel.py rag stats
+```

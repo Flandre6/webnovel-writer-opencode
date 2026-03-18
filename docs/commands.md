@@ -16,7 +16,7 @@
 
 示例：
 
-```bash
+```
 /webnovel-plan 1
 /webnovel-plan 2-3
 ```
@@ -27,16 +27,10 @@
 
 示例：
 
-```bash
+```
 /webnovel-write 1
 /webnovel-write 45
 ```
-
-常见模式：
-
-- 标准模式：全流程
-- 快速模式：`--fast`
-- 极简模式：`--minimal`
 
 ## `/webnovel-review [范围]`
 
@@ -44,7 +38,7 @@
 
 示例：
 
-```bash
+```
 /webnovel-review 1-5
 /webnovel-review 45
 ```
@@ -55,7 +49,7 @@
 
 示例：
 
-```bash
+```
 /webnovel-query 萧炎
 /webnovel-query 伏笔
 /webnovel-query 紧急
@@ -67,7 +61,7 @@
 
 示例：
 
-```bash
+```
 /webnovel-resume
 ```
 
@@ -77,7 +71,7 @@
 
 示例：
 
-```bash
+```
 /webnovel-learn "本章的危机钩设计很有效，悬念拉满"
 ```
 
