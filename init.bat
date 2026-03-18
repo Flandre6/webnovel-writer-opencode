@@ -59,6 +59,9 @@ xcopy /E /I /Y "%SOURCE_DIR%\prompts" "prompts\" >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\init.bat" "." >nul 2>&1
 echo   Files copied
 
+REM Cleanup unwanted directories
+if exist "docs" rmdir /S /Q "docs" 2>nul
+
 echo [5/6] Installing Python dependencies...
 if exist "%SOURCE_DIR%\requirements.txt" (
     pip install -r "%SOURCE_DIR%\requirements.txt" >nul 2>&1

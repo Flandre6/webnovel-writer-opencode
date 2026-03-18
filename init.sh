@@ -92,6 +92,9 @@ mkdir -p "${PROJECT_DIR}/.opencode"
 [ -f "$SOURCE_DIR/init.sh" ] && cp "$SOURCE_DIR/init.sh" "${PROJECT_DIR}/" && echo "init.sh: OK"
 [ -f "$SOURCE_DIR/init.bat" ] && cp "$SOURCE_DIR/init.bat" "${PROJECT_DIR}/" && echo "init.bat: OK"
 
+# Cleanup unwanted directories
+rm -rf "${PROJECT_DIR}/docs"
+
 # Install Python dependencies
 echo "Installing Python dependencies..."
 if [ -f "$SOURCE_DIR/requirements.txt" ]; then
