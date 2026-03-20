@@ -4,15 +4,12 @@
     "consistency-checker": {
       "description": "设定一致性检查，输出结构化报告供润色步骤参考",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.1,
       "max_tokens": 4000,
-      "tools": {
-        "read_file": true,
-        "grep": true,
-        "bash": true
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": {
           "*": "ask",
@@ -26,15 +23,12 @@
     "context-agent": {
       "description": "上下文搜集Agent，生成创作执行包供Step 2A直接消费",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.2,
       "max_tokens": 6000,
-      "tools": {
-        "read_file": true,
-        "grep": true,
-        "bash": true
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": {
           "*": "ask",
@@ -47,15 +41,13 @@
     "continuity-checker": {
       "description": "连贯性检查，输出结构化报告供润色步骤参考",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.1,
       "max_tokens": 4000,
       "timeout": 120,
-      "tools": {
-        "read_file": true,
-        "grep": true
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": "deny"
       },
@@ -65,17 +57,13 @@
     "data-agent": {
       "description": "数据处理Agent，负责AI实体提取、场景切片、索引构建",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.1,
       "max_tokens": 5000,
       "timeout": 300,
-      "tools": {
-        "read_file": true,
-        "write_file": true,
-        "bash": true,
-        "python": true
-      },
       "permission": {
+        "read_file": "allow",
+        "write_file": "allow",
         "edit": "allow",
         "bash": {
           "*": "ask",
@@ -89,16 +77,12 @@
     "high-point-checker": {
       "description": "爽点密度检查，支持迪化误解/身份掉马模式",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.1,
       "max_tokens": 4000,
-      "tools": {
-        "read_file": true,
-        "grep": true,
-        "bash": true,
-        "rag_search": true
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": {
           "*": "ask",
@@ -111,14 +95,12 @@
     "ooc-checker": {
       "description": "人物OOC检查，防止角色行为与人设冲突",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.1,
       "max_tokens": 4000,
-      "tools": {
-        "read_file": true,
-        "grep": true
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": "deny"
       },
@@ -128,15 +110,12 @@
     "pacing-checker": {
       "description": "Strand Weave节奏检查，防止读者疲劳",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.1,
       "max_tokens": 4000,
-      "tools": {
-        "read_file": true,
-        "grep": true,
-        "bash": true
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": {
           "*": "ask",
@@ -149,16 +128,12 @@
     "reader-pull-checker": {
       "description": "追读力检查器，评估钩子/微兑现/约束分层",
       "mode": "subagent",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.1,
       "max_tokens": 4500,
-      "tools": {
-        "read_file": true,
-        "grep": true,
-        "bash": true,
-        "rag_search": true
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": {
           "*": "ask",
@@ -171,33 +146,19 @@
     "webnovel-build": {
       "description": "Webnovel写作主代理，协调所有子代理完成章节创作",
       "mode": "primary",
-      "model": "anthropic/claude-3.5-sonnet-20241022",
+      "model": "anthropic/claude-sonnet-4-5",
       "temperature": 0.3,
       "color": "#4CAF50",
-      "tools": {
-        "read_file": true,
-        "write_file": true,
-        "edit": true,
-        "bash": true,
-        "grep": true
-      },
       "permission": {
+        "read_file": "allow",
+        "write_file": "allow",
         "edit": "allow",
         "bash": {
           "*": "ask",
           "python *webnovel.py*": "allow",
           "git *": "ask"
         },
-        "task": {
-          "consistency-checker": "allow",
-          "context-agent": "allow",
-          "continuity-checker": "allow",
-          "data-agent": "allow",
-          "high-point-checker": "allow",
-          "ooc-checker": "allow",
-          "pacing-checker": "allow",
-          "reader-pull-checker": "allow"
-        }
+        "task": "allow"
       },
       "prompt": "{file:./prompts/webnovel-build.txt}"
     },
@@ -205,23 +166,15 @@
     "webnovel-plan": {
       "description": "Webnovel规划代理，用于分析章节大纲和制定创作计划",
       "mode": "primary",
-      "model": "anthropic/claude-3.5-haiku-20241022",
+      "model": "anthropic/claude-haiku-4",
       "temperature": 0.1,
       "color": "#2196F3",
-      "tools": {
-        "read_file": true,
-        "grep": true,
-        "bash": false,
-        "write_file": false,
-        "edit": false
-      },
       "permission": {
+        "read_file": "allow",
+        "grep": "allow",
         "edit": "deny",
         "bash": "deny",
-        "task": {
-          "context-agent": "allow",
-          "*": "deny"
-        }
+        "task": "allow"
       },
       "prompt": "{file:./prompts/webnovel-plan.txt}"
     }
@@ -236,14 +189,9 @@
       "cat *": "allow",
       "ls *": "allow"
     },
-    "webfetch": "deny"
+    "webfetch": "deny",
+    "task": "allow"
   },
   
-  "tools": {
-    "read_file": true,
-    "write_file": true,
-    "edit": true,
-    "bash": true,
-    "grep": true
-  }
+  "model": "anthropic/claude-sonnet-4-5"
 }
