@@ -127,21 +127,21 @@ except ImportError:
 ```
 项目目录/
 ├── .opencode/              # OpenCode 配置
-│   ├── skills/            # 7个 Skills
+│   ├── agents/           # 8个 Agent 定义（Markdown格式）
+│   ├── skills/           # 7个 Skills
 │   ├── scripts/           # Python 核心
-│   │   └── data_modules/  # 核心模块
+│   │   └── data_modules/ # 核心模块
 │   │       ├── state_manager.py
 │   │       ├── context_manager.py
 │   │       ├── index_manager.py
 │   │       ├── api_client.py
-│   │       └── tests/     # 测试文件
+│   │       └── tests/    # 测试文件
 │   ├── references/        # 参考文档
 │   ├── genres/            # 题材参考
 │   └── templates/         # 输出模板
-├── opencode.json          # Agents 配置
-├── prompts/               # Agent 提示词
+├── opencode.json          # Agent 配置
 ├── .env                   # API 配置
-└── init.sh / init.bat    # 安装脚本
+└── init.sh / init.bat     # 安装脚本
 ```
 
 ## 关键约定

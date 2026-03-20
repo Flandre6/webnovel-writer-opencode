@@ -81,17 +81,28 @@ RERANK_API_KEY=your_api_key
 
 | Agent | 功能描述 |
 |-------|----------|
-| `context-agent` | 上下文搜集，生成创作执行包 |
-| `data-agent` | 数据处理，实体提取与索引构建 |
-| `consistency-checker` | 设定一致性检查 |
-| `continuity-checker` | 连贯性检查 |
-| `ooc-checker` | 人物 OOC 检查 |
-| `high-point-checker` | 爽点密度检查 |
-| `pacing-checker` | 节奏检查 |
-| `reader-pull-checker` | 追读力检查 |
+| `context-agent` | 上下文搜集，生成创作执行包供写作直接使用 |
+| `data-agent` | 数据处理，实体提取、场景切片、索引构建 |
+| `consistency-checker` | 设定一致性检查，战力/地点/时间线/实体 |
+| `continuity-checker` | 连贯性检查，场景过渡、伏笔管理 |
+| `ooc-checker` | 人物 OOC 检查，防止角色行为与人设冲突 |
+| `high-point-checker` | 爽点密度检查，支持迪化误解/身份掉马模式 |
+| `pacing-checker` | Strand Weave 节奏检查，防止读者疲劳 |
+| `reader-pull-checker` | 追读力检查，评估钩子/微兑现/约束分层 |
 
 ## 项目结构
 
+```
+项目目录/
+├── .opencode/              # OpenCode 配置
+│   ├── agents/           # 8个 Agent 定义（Markdown格式）
+│   ├── skills/           # 7个 Skills
+│   ├── scripts/          # Python 核心脚本
+│   ├── references/       # 参考文档
+│   ├── genres/           # 题材参考（38+）
+│   └── templates/        # 输出模板
+├── .env                   # API 配置
+└── init.sh / init.bat    # 安装脚本
 ```
 项目目录/
 ├── .opencode/              # OpenCode 配置
@@ -129,7 +140,7 @@ RERANK_API_KEY=your_api_key
 
 ```bash
 # 删除安装文件
-rm -rf .opencode/ prompts/ opencode.json .env
+rm -rf .opencode/ .env
 
 # 卸载 Python 依赖
 pip uninstall aiohttp filelock pydantic pytest pytest-asyncio pytest-cov -y

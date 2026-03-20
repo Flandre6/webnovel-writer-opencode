@@ -22,17 +22,17 @@
 
 | 脚本 | 主要触发方 | 触发节点 | 备注 |
 |---|---|---|---|
-| `${CLAUDE_PLUGIN_ROOT}/scripts/webnovel.py` | 所有 Skills / Agents | 任何需要调用 CLI 的节点 | **统一入口**：负责解析真实 book project_root，并转发到 `data_modules/*` 或 `scripts/*.py`，避免 `PYTHONPATH/cd/参数顺序` 导致的隐性失败 |
-| `${CLAUDE_PLUGIN_ROOT}/scripts/update_state.py` | `webnovel-plan` Skill | 章纲/卷规划落盘后更新 `state.json` | 也可被自动化脚本调用；默认不是人工常规入口 |
-| `${CLAUDE_PLUGIN_ROOT}/scripts/status_reporter.py` | `webnovel-query` Skill / `pacing-checker` Agent(可选) | 查询分析或节奏审查时 | 产出健康报告与紧急度分析 |
-| `${CLAUDE_PLUGIN_ROOT}/scripts/workflow_manager.py` | `webnovel-resume` Skill | 恢复流程 detect/cleanup/clear | 仅恢复场景触发 |
-| `${CLAUDE_PLUGIN_ROOT}/scripts/init_project.py` | `webnovel-init` Skill | 项目初始化阶段 | 负责项目脚手架与基础状态文件 |
+| `.opencode/scripts/webnovel.py` | 所有 Skills / Agents | 任何需要调用 CLI 的节点 | **统一入口**：负责解析真实 book project_root，并转发到 `data_modules/*` 或 `scripts/*.py`，避免 `PYTHONPATH/cd/参数顺序` 导致的隐性失败 |
+| `.opencode/scripts/update_state.py` | `webnovel-plan` Skill | 章纲/卷规划落盘后更新 `state.json` | 也可被自动化脚本调用；默认不是人工常规入口 |
+| `.opencode/scripts/status_reporter.py` | `webnovel-query` Skill / `pacing-checker` Agent(可选) | 查询分析或节奏审查时 | 产出健康报告与紧急度分析 |
+| `.opencode/scripts/workflow_manager.py` | `webnovel-resume` Skill | 恢复流程 detect/cleanup/clear | 仅恢复场景触发 |
+| `.opencode/scripts/init_project.py` | `webnovel-init` Skill | 项目初始化阶段 | 负责项目脚手架与基础状态文件 |
 
 ## 内部库调用（非独立命令）
 
 | 内部模块 | 调用方 | 触发时机 |
 |---|---|---|
-| `${CLAUDE_PLUGIN_ROOT}/scripts/data_modules/state_validator.py` | `update_state.py`、`status_reporter.py` | 读写 `state.json` 时自动规范化与校验 |
+| `.opencode/scripts/data_modules/state_validator.py` | `update_state.py`、`status_reporter.py` | 读写 `state.json` 时自动规范化与校验 |
 
 ## 变更约束（后续开发必须遵守）
 
