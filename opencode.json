@@ -133,38 +133,6 @@
         }
       },
       "prompt": "{file:./prompts/reader-pull-checker.txt}"
-    },
-    
-    "webnovel-build": {
-      "description": "Webnovel写作主代理，协调所有子代理完成章节创作",
-      "mode": "primary",
-      "color": "#4CAF50",
-      "permission": {
-        "read_file": "allow",
-        "write_file": "allow",
-        "edit": "allow",
-        "bash": {
-          "*": "ask",
-          "python *webnovel.py*": "allow",
-          "git *": "ask"
-        },
-        "task": "allow"
-      },
-      "prompt": "{file:./prompts/webnovel-build.txt}"
-    },
-    
-    "webnovel-plan": {
-      "description": "Webnovel规划代理，用于分析章节大纲和制定创作计划",
-      "mode": "primary",
-      "color": "#2196F3",
-      "permission": {
-        "read_file": "allow",
-        "grep": "allow",
-        "edit": "deny",
-        "bash": "deny",
-        "task": "allow"
-      },
-      "prompt": "{file:./prompts/webnovel-plan.txt}"
     }
   },
   
