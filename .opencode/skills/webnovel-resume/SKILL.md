@@ -1,6 +1,6 @@
 ---
 name: webnovel-resume
-description: Recovers interrupted webnovel tasks with precise workflow state tracking. Detects interruption point and provides safe recovery options. Activates when user wants to resume or /webnovel-resume.
+description: 通过精确的工作流状态追踪恢复中断的网文任务。检测断点并提供安全的恢复选项。当用户想要恢复或执行/webnovel-resume时激活。
 allowed-tools: Read Bash AskUserQuestion
 ---
 
