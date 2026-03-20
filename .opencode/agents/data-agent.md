@@ -4,7 +4,7 @@ mode: subagent
 temperature: 0.1
 max_tokens: 5000
 timeout: 300
-tools:
+permission:
   read_file: allow
   write_file: allow
   edit: allow

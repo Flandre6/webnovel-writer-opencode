@@ -3,7 +3,7 @@ description: Strand Weave节奏检查，防止读者疲劳
 mode: subagent
 temperature: 0.1
 max_tokens: 4000
-tools:
+permission:
   read_file: allow
   grep: allow
   edit: deny

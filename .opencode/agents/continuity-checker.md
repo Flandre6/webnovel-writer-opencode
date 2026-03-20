@@ -4,7 +4,7 @@ mode: subagent
 temperature: 0.1
 max_tokens: 4000
 timeout: 120
-tools:
+permission:
   read_file: allow
   grep: allow
   edit: deny
