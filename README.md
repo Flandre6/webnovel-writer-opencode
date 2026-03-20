@@ -104,18 +104,6 @@ RERANK_API_KEY=your_api_key
 ├── .env                   # API 配置
 └── init.sh / init.bat    # 安装脚本
 ```
-项目目录/
-├── .opencode/              # OpenCode 配置
-│   ├── skills/            # 7个 Skills
-│   ├── scripts/           # Python 核心脚本
-│   ├── references/        # 参考文档
-│   ├── genres/            # 题材参考（38+）
-│   └── templates/         # 输出模板
-├── opencode.json          # Agents 配置
-├── prompts/               # Agent 提示词
-├── .env                   # API 配置
-└── init.sh / init.bat    # 安装脚本
-```
 
 ## 工作流程
 
