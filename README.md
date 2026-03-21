@@ -28,9 +28,9 @@ Webnovel Writer for OpenCode 是一个基于 OpenCode 的长篇网文 AI 创作�
 ```bash
 # Linux/macOS
 curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.sh | bash
-
-# Windows - 下载 [init.bat](https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.bat) 双击运行
 ```
+### Windows - 下载 [init.bat](https://github.com/lujih/webnovel-writer-opencode/releases/download/v1.0.0/init.bat) 双击运行
+
 
 安装脚本会自动：
 - 下载并配置 OpenCode Skills 和 Agents
