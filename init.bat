@@ -12,7 +12,7 @@ set "PROJECT_DIR=%CD%"
 set "REPO=lujih/webnovel-writer-opencode"
 set "SUCCESS=0"
 
-echo [1/6] Downloading...
+echo [1/4] Downloading...
 powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/master.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; exit 0 } catch { exit 1 }"
 if %errorlevel% neq 0 (
     echo Trying mirror...
@@ -31,11 +31,11 @@ if not exist "webnovel-writer.zip" (
     exit /b 1
 )
 
-echo [2/6] Extracting...
+echo [2/4] Extracting...
 powershell -Command "Expand-Archive -Path 'webnovel-writer.zip' -DestinationPath '.' -Force"
 del /Q webnovel-writer.zip 2>nul
 
-echo [3/6] Setting up directories...
+echo [3/4] Copying files...
 if not exist ".opencode" mkdir ".opencode"
 
 set "SOURCE_DIR="
@@ -49,25 +49,18 @@ if not defined SOURCE_DIR (
     exit /b 1
 )
 
-echo [4/6] Copying files...
 xcopy /E /I /Y "%SOURCE_DIR%\.opencode" ".opencode\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\init.bat" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\init.sh" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\requirements.txt" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\.env" "." >nul 2>&1
-echo   Files copied
+echo   .opencode: OK
 
-echo [5/6] Installing Python dependencies...
-if exist "requirements.txt" (
-    pip install -r "requirements.txt" >nul 2>&1
+echo [4/4] Finalizing...
+if exist "%SOURCE_DIR%\requirements.txt" (
+    pip install -r "%SOURCE_DIR%\requirements.txt" >nul 2>&1
     if %errorlevel% equ 0 (
         echo   Python deps: OK
     ) else (
         echo   Python deps: Already installed or skipped
     )
 )
-
-echo [6/6] Creating .env...
 if not exist ".env" (
     (
         echo # Webnovel Writer for OpenCode Config

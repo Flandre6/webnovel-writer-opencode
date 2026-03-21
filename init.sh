@@ -29,7 +29,7 @@ SUCCESS=0
 # Try GitHub master first
 while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ $SUCCESS -eq 0 ]; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "[1/5] Downloading from GitHub (attempt $RETRY_COUNT/$MAX_RETRIES)..."
+    echo "[1/4] Downloading from GitHub (attempt $RETRY_COUNT/$MAX_RETRIES)..."
     
     if curl -sL --max-time 120 "$ARCHIVE_URL" -o "repo.zip" 2>/dev/null; then
         if [ -s "repo.zip" ]; then
@@ -62,7 +62,7 @@ if [ $SUCCESS -eq 0 ]; then
     exit 1
 fi
 
-echo "[2/5] Extracting..."
+echo "[2/4] Extracting..."
 unzip -q "repo.zip"
 rm -f "repo.zip"
 
@@ -80,7 +80,7 @@ if [ -z "$SOURCE_DIR" ]; then
     exit 1
 fi
 
-echo "[3/5] Installing to .opencode..."
+echo "[3/4] Installing to .opencode..."
 mkdir -p "${PROJECT_DIR}/.opencode"
 
 # Copy .opencode directory (includes agents/, skills/, scripts/, references/, genres/, templates/)
@@ -89,25 +89,16 @@ if [ -d "$SOURCE_DIR/.opencode" ]; then
     echo "      .opencode/: OK"
 fi
 
-# Copy root files
-[ -f "$SOURCE_DIR/init.sh" ] && cp "$SOURCE_DIR/init.sh" "${PROJECT_DIR}/" && echo "      init.sh: OK"
-[ -f "$SOURCE_DIR/init.bat" ] && cp "$SOURCE_DIR/init.bat" "${PROJECT_DIR}/" && echo "      init.bat: OK"
-[ -f "$SOURCE_DIR/requirements.txt" ] && cp "$SOURCE_DIR/requirements.txt" "${PROJECT_DIR}/" && echo "      requirements.txt: OK"
-
 # Install Python dependencies
-echo "[4/5] Installing Python dependencies..."
-if [ -f "requirements.txt" ]; then
-    pip install -r "requirements.txt" 2>/dev/null && echo "      Python deps: OK" || echo "      Python deps: SKIPPED"
+echo "[4/4] Installing Python dependencies..."
+if [ -f "$SOURCE_DIR/requirements.txt" ]; then
+    pip install -r "$SOURCE_DIR/requirements.txt" 2>/dev/null && echo "      Python deps: OK" || echo "      Python deps: SKIPPED"
 fi
 
-# Copy or create .env
-echo "[5/5] Creating .env..."
+# Create .env
+echo "      Creating .env..."
 if [ ! -f ".env" ]; then
-    if [ -f "$SOURCE_DIR/.env" ]; then
-        cp "$SOURCE_DIR/.env" "${PROJECT_DIR}/.env"
-        echo "      .env: OK"
-    else
-        cat > "${PROJECT_DIR}/.env" << 'EOF'
+    cat > "${PROJECT_DIR}/.env" << 'EOF'
 # Webnovel Writer for OpenCode Config
 # Fill in your API Key
 
@@ -119,8 +110,7 @@ RERANK_BASE_URL=https://api.jina.ai/v1
 RERANK_MODEL=jina-reranker-v3
 RERANK_API_KEY=your_api_key
 EOF
-        echo "      .env: CREATED"
-    fi
+    echo "      .env: CREATED"
 else
     echo "      .env: Already exists, skipped"
 fi
