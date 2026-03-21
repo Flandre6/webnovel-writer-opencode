@@ -2,9 +2,8 @@
 description: 爽点密度检查，支持迪化误解/身份掉马模式
 mode: subagent
 temperature: 0.1
-max_tokens: 4000
 permission:
-  read_file: allow
+  read: allow
   grep: allow
   edit: deny
   bash: ask

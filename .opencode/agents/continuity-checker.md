@@ -2,10 +2,9 @@
 description: 连贯性检查，输出结构化报告供润色步骤参考
 mode: subagent
 temperature: 0.1
-max_tokens: 4000
 timeout: 120
 permission:
-  read_file: allow
+  read: allow
   grep: allow
   edit: deny
   bash: deny

@@ -3,7 +3,8 @@ chcp 65001 >nul 2>&1
 
 echo.
 echo ========================================
-echo   Webnovel Writer Installer
+echo   Webnovel Writer for OpenCode
+echo   Installer v1.0.0
 echo ========================================
 echo.
 
@@ -49,22 +50,19 @@ if not defined SOURCE_DIR (
 )
 
 echo [4/6] Copying files...
-xcopy /E /I /Y "%SOURCE_DIR%\.opencode\skills" ".opencode\skills\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\.opencode\genres" ".opencode\genres\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\.opencode\references" ".opencode\references\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\.opencode\templates" ".opencode\templates\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\.opencode\scripts" ".opencode\scripts\" >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\opencode.json" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\prompts" "prompts\" >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.opencode" ".opencode\" >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\init.bat" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\init.sh" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\requirements.txt" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\.env" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\README.md" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\AGENTS.md" "." >nul 2>&1
+xcopy /E /I /Y "%SOURCE_DIR%\LICENSE" "." >nul 2>&1
 echo   Files copied
 
-REM Cleanup unwanted directories
-if exist "docs" rmdir /S /Q "docs" 2>nul
-
 echo [5/6] Installing Python dependencies...
-if exist "%SOURCE_DIR%\requirements.txt" (
-    pip install -r "%SOURCE_DIR%\requirements.txt" >nul 2>&1
+if exist "requirements.txt" (
+    pip install -r "requirements.txt" >nul 2>&1
     if %errorlevel% equ 0 (
         echo   Python deps: OK
     ) else (
@@ -73,11 +71,9 @@ if exist "%SOURCE_DIR%\requirements.txt" (
 )
 
 echo [6/6] Creating .env...
-if exist "%SOURCE_DIR%\.env" (
-    copy /Y "%SOURCE_DIR%\.env" ".env" >nul 2>&1
-) else (
+if not exist ".env" (
     (
-        echo # Webnovel Writer Config
+        echo # Webnovel Writer for OpenCode Config
         echo # Fill in your API Key
         echo.
         echo EMBED_BASE_URL=https://api-inference.modelscope.cn/v1
@@ -88,18 +84,24 @@ if exist "%SOURCE_DIR%\.env" (
         echo RERANK_MODEL=jina-reranker-v3
         echo RERANK_API_KEY=your_api_key
     ) > .env
+    echo   .env created
+) else (
+    echo   .env: Already exists, skipped
 )
-echo   .env: OK
+
+REM Cleanup source directory
+if exist "%SOURCE_DIR%" rmdir /S /Q "%SOURCE_DIR%" 2>nul
 
 rmdir /S /Q "%SOURCE_DIR%" 2>nul
 
 echo.
 echo ========================================
+echo   Webnovel Writer for OpenCode
 echo   Installation Complete!
 echo ========================================
 echo.
 echo Next steps:
 echo   1. Edit .env and add your API Key
-echo   2. Restart OpenCode
+echo   2. Restart OpenCode and enjoy writing!
 echo.
 pause

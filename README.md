@@ -1,13 +1,14 @@
-# Webnovel Writer
+# Webnovel Writer for OpenCode
 
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 [![OpenCode](https://img.shields.io/badge/OpenCode-Compatible-purple.svg)](https://opencode.ai)
 [![GitHub Stars](https://img.shields.io/github/stars/lujih/webnovel-writer-opencode)](https://github.com/lujih/webnovel-writer-opencode/stargazers)
 [![Python](https://img.shields.io/badge/Python-3.8+-green.svg)](https://python.org)
+[![Windows](https://img.shields.io/badge/Windows-Download-blue.svg)](https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.bat)
 
 ## 项目介绍
 
-Webnovel Writer 是一个基于 OpenCode 的长篇网文 AI 创作系统，目标降低 AI 写作中的"遗忘"和"幻觉"，支持长周期连载创作。
+Webnovel Writer for OpenCode 是一个基于 OpenCode 的长篇网文 AI 创作系统，目标降低 AI 写作中的"遗忘"和"幻觉"，支持长周期连载创作。
 
 本项目是基于 [lingfengQAQ/webnovel-writer](https://github.com/lingfengQAQ/webnovel-writer) 改编的 OpenCode 版本。
 
@@ -28,7 +29,7 @@ Webnovel Writer 是一个基于 OpenCode 的长篇网文 AI 创作系统，目�
 # Linux/macOS
 curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.sh | bash
 
-# Windows - 下载 init.bat 双击运行
+# Windows - 下载 [init.bat](https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.bat) 双击运行
 ```
 
 安装脚本会自动：

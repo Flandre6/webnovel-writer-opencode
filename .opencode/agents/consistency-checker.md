@@ -2,9 +2,8 @@
 description: 设定一致性检查，输出结构化报告供润色步骤参考
 mode: subagent
 temperature: 0.1
-max_tokens: 4000
 permission:
-  read_file: allow
+  read: allow
   grep: allow
   edit: deny
   bash: ask

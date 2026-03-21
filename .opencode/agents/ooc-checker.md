@@ -2,9 +2,8 @@
 description: 人物OOC检查，防止角色行为与人设冲突
 mode: subagent
 temperature: 0.1
-max_tokens: 4000
 permission:
-  read_file: allow
+  read: allow
   grep: allow
   edit: deny
   bash: deny

@@ -2,9 +2,8 @@
 description: 上下文搜集Agent，生成创作执行包供Step 2A直接消费
 mode: subagent
 temperature: 0.2
-max_tokens: 6000
 permission:
-  read_file: allow
+  read: allow
   grep: allow
   edit: deny
   bash: ask

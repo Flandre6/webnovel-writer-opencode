@@ -2,9 +2,8 @@
 description: 追读力检查器，评估钩子/微兑现/约束分层
 mode: subagent
 temperature: 0.1
-max_tokens: 4500
 permission:
-  read_file: allow
+  read: allow
   grep: allow
   edit: deny
   bash: ask

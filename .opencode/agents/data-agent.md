@@ -2,11 +2,9 @@
 description: 数据处理Agent，负责AI实体提取、场景切片、索引构建
 mode: subagent
 temperature: 0.1
-max_tokens: 5000
 timeout: 300
 permission:
-  read_file: allow
-  write_file: allow
+  read: allow
   edit: allow
   bash: ask
 ---
