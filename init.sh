@@ -93,9 +93,6 @@ fi
 [ -f "$SOURCE_DIR/init.sh" ] && cp "$SOURCE_DIR/init.sh" "${PROJECT_DIR}/" && echo "      init.sh: OK"
 [ -f "$SOURCE_DIR/init.bat" ] && cp "$SOURCE_DIR/init.bat" "${PROJECT_DIR}/" && echo "      init.bat: OK"
 [ -f "$SOURCE_DIR/requirements.txt" ] && cp "$SOURCE_DIR/requirements.txt" "${PROJECT_DIR}/" && echo "      requirements.txt: OK"
-[ -f "$SOURCE_DIR/README.md" ] && cp "$SOURCE_DIR/README.md" "${PROJECT_DIR}/" && echo "      README.md: OK"
-[ -f "$SOURCE_DIR/AGENTS.md" ] && cp "$SOURCE_DIR/AGENTS.md" "${PROJECT_DIR}/" && echo "      AGENTS.md: OK"
-[ -f "$SOURCE_DIR/LICENSE" ] && cp "$SOURCE_DIR/LICENSE" "${PROJECT_DIR}/" && echo "      LICENSE: OK"
 
 # Install Python dependencies
 echo "[4/5] Installing Python dependencies..."

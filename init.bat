@@ -55,9 +55,6 @@ xcopy /E /I /Y "%SOURCE_DIR%\init.bat" "." >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\init.sh" "." >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\requirements.txt" "." >nul 2>&1
 xcopy /E /I /Y "%SOURCE_DIR%\.env" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\README.md" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\AGENTS.md" "." >nul 2>&1
-xcopy /E /I /Y "%SOURCE_DIR%\LICENSE" "." >nul 2>&1
 echo   Files copied
 
 echo [5/6] Installing Python dependencies...
