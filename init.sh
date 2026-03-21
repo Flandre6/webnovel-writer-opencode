@@ -1,12 +1,16 @@
 #!/bin/bash
-# Webnovel Writer Installer
+# Webnovel Writer for OpenCode Installer v1.0.0
 # Usage: curl -sL https://raw.githubusercontent.com/lujih/webnovel-writer-opencode/master/init.sh | bash
 
 REPO="lujih/webnovel-writer-opencode"
 BRANCH="master"
 ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip"
 
-echo "Webnovel Writer Installer"
+echo ""
+echo "========================================"
+echo "  Webnovel Writer for OpenCode"
+echo "  Installer v1.0.0"
+echo "========================================"
 echo ""
 
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
@@ -25,7 +29,7 @@ SUCCESS=0
 # Try GitHub master first
 while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ $SUCCESS -eq 0 ]; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "Downloading from GitHub (attempt $RETRY_COUNT/$MAX_RETRIES)..."
+    echo "[1/5] Downloading from GitHub (attempt $RETRY_COUNT/$MAX_RETRIES)..."
     
     if curl -sL --max-time 120 "$ARCHIVE_URL" -o "repo.zip" 2>/dev/null; then
         if [ -s "repo.zip" ]; then
@@ -40,7 +44,7 @@ done
 
 # Try China mirror as fallback
 if [ $SUCCESS -eq 0 ]; then
-    echo "Trying China mirror (github.akams.cn)..."
+    echo "       Trying China mirror (github.akams.cn)..."
     if curl -sL --max-time 120 "https://github.akams.cn/${REPO}/archive/refs/heads/${BRANCH}.zip" -o "repo.zip" 2>/dev/null; then
         if [ -s "repo.zip" ]; then
             SUCCESS=1
@@ -58,7 +62,7 @@ if [ $SUCCESS -eq 0 ]; then
     exit 1
 fi
 
-echo "Extracting..."
+echo "[2/5] Extracting..."
 unzip -q "repo.zip"
 rm -f "repo.zip"
 
@@ -76,40 +80,38 @@ if [ -z "$SOURCE_DIR" ]; then
     exit 1
 fi
 
-echo "Installing to .opencode..."
+echo "[3/5] Installing to .opencode..."
 mkdir -p "${PROJECT_DIR}/.opencode"
 
-# Copy directories from .opencode/
-[ -d "$SOURCE_DIR/.opencode/skills" ] && cp -r "$SOURCE_DIR/.opencode/skills" "${PROJECT_DIR}/.opencode/" && echo "skills: OK"
-[ -d "$SOURCE_DIR/.opencode/genres" ] && cp -r "$SOURCE_DIR/.opencode/genres" "${PROJECT_DIR}/.opencode/" && echo "genres: OK"
-[ -d "$SOURCE_DIR/.opencode/references" ] && cp -r "$SOURCE_DIR/.opencode/references" "${PROJECT_DIR}/.opencode/" && echo "references: OK"
-[ -d "$SOURCE_DIR/.opencode/templates" ] && cp -r "$SOURCE_DIR/.opencode/templates" "${PROJECT_DIR}/.opencode/" && echo "templates: OK"
-[ -d "$SOURCE_DIR/.opencode/scripts" ] && cp -r "$SOURCE_DIR/.opencode/scripts" "${PROJECT_DIR}/.opencode/" && echo "scripts: OK"
+# Copy .opencode directory (includes agents/, skills/, scripts/, references/, genres/, templates/)
+if [ -d "$SOURCE_DIR/.opencode" ]; then
+    cp -r "$SOURCE_DIR/.opencode/"* "${PROJECT_DIR}/.opencode/" 2>/dev/null
+    echo "      .opencode/: OK"
+fi
 
 # Copy root files
-[ -f "$SOURCE_DIR/opencode.json" ] && cp "$SOURCE_DIR/opencode.json" "${PROJECT_DIR}/" && echo "opencode.json: OK"
-[ -d "$SOURCE_DIR/prompts" ] && cp -r "$SOURCE_DIR/prompts" "${PROJECT_DIR}/" && echo "prompts: OK"
-[ -f "$SOURCE_DIR/init.sh" ] && cp "$SOURCE_DIR/init.sh" "${PROJECT_DIR}/" && echo "init.sh: OK"
-[ -f "$SOURCE_DIR/init.bat" ] && cp "$SOURCE_DIR/init.bat" "${PROJECT_DIR}/" && echo "init.bat: OK"
-
-# Cleanup unwanted directories
-rm -rf "${PROJECT_DIR}/docs"
+[ -f "$SOURCE_DIR/init.sh" ] && cp "$SOURCE_DIR/init.sh" "${PROJECT_DIR}/" && echo "      init.sh: OK"
+[ -f "$SOURCE_DIR/init.bat" ] && cp "$SOURCE_DIR/init.bat" "${PROJECT_DIR}/" && echo "      init.bat: OK"
+[ -f "$SOURCE_DIR/requirements.txt" ] && cp "$SOURCE_DIR/requirements.txt" "${PROJECT_DIR}/" && echo "      requirements.txt: OK"
+[ -f "$SOURCE_DIR/README.md" ] && cp "$SOURCE_DIR/README.md" "${PROJECT_DIR}/" && echo "      README.md: OK"
+[ -f "$SOURCE_DIR/AGENTS.md" ] && cp "$SOURCE_DIR/AGENTS.md" "${PROJECT_DIR}/" && echo "      AGENTS.md: OK"
+[ -f "$SOURCE_DIR/LICENSE" ] && cp "$SOURCE_DIR/LICENSE" "${PROJECT_DIR}/" && echo "      LICENSE: OK"
 
 # Install Python dependencies
-echo "Installing Python dependencies..."
-if [ -f "$SOURCE_DIR/requirements.txt" ]; then
-    pip install -r "$SOURCE_DIR/requirements.txt" 2>/dev/null && echo "Python dependencies: OK" || echo "Python dependencies: SKIPPED"
-else
-    pip install -r "https://raw.githubusercontent.com/${REPO}/${BRANCH}/requirements.txt" 2>/dev/null && echo "Python dependencies: OK" || echo "Python dependencies: SKIPPED"
+echo "[4/5] Installing Python dependencies..."
+if [ -f "requirements.txt" ]; then
+    pip install -r "requirements.txt" 2>/dev/null && echo "      Python deps: OK" || echo "      Python deps: SKIPPED"
 fi
 
 # Copy or create .env
-if [ -f "$SOURCE_DIR/.env" ]; then
-    cp "$SOURCE_DIR/.env" "${PROJECT_DIR}/.env"
-    echo ".env: OK"
-else
-    cat > "${PROJECT_DIR}/.env" << 'EOF'
-# Webnovel Writer Config
+echo "[5/5] Creating .env..."
+if [ ! -f ".env" ]; then
+    if [ -f "$SOURCE_DIR/.env" ]; then
+        cp "$SOURCE_DIR/.env" "${PROJECT_DIR}/.env"
+        echo "      .env: OK"
+    else
+        cat > "${PROJECT_DIR}/.env" << 'EOF'
+# Webnovel Writer for OpenCode Config
 # Fill in your API Key
 
 EMBED_BASE_URL=https://api-inference.modelscope.cn/v1
@@ -120,15 +122,22 @@ RERANK_BASE_URL=https://api.jina.ai/v1
 RERANK_MODEL=jina-reranker-v3
 RERANK_API_KEY=your_api_key
 EOF
-    echo ".env: CREATED"
+        echo "      .env: CREATED"
+    fi
+else
+    echo "      .env: Already exists, skipped"
 fi
 
-# Cleanup
+# Cleanup source directory
 rm -rf "$SOURCE_DIR"
 
 echo ""
-echo "Done!"
+echo "========================================"
+echo "  Webnovel Writer for OpenCode"
+echo "  Installation Complete!"
+echo "========================================"
 echo ""
 echo "Next steps:"
 echo "  1. Edit .env and add your API Key"
-echo "  2. Restart OpenCode"
+echo "  2. Restart OpenCode and enjoy writing!"
+echo ""
