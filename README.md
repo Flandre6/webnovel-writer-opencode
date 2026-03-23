@@ -137,18 +137,9 @@ pip uninstall aiohttp filelock pydantic pytest pytest-asyncio pytest-cov -y
 
 > 卸载不会影响你已创建的网文项目文件（正文、大纲、设定集等）。
 
-## 开发
+## 贡献
 
-```bash
-# 安装依赖
-pip install -e .
-
-# 运行测试（覆盖率要求 90%）
-pytest --cov .opencode/scripts/data_modules/tests/
-
-# 运行单个测试
-pytest .opencode/scripts/data_modules/tests/test_config.py::test_config_paths_and_defaults
-```
+欢迎提交 Issue 和 Pull Request！
 
 ## 开源协议
 
