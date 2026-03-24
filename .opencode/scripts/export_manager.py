@@ -6,7 +6,7 @@
 支持将章节正文导出为多种格式：
 - TXT: 纯文本
 - EPUB: 电子书
-- DOCX: Word 文档（符合 docx skill 规范）
+- Markdown: Markdown 格式
 """
 
 from __future__ import annotations
@@ -17,9 +17,8 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
-# Windows 控制台编码修复
 if sys.platform == "win32":
     try:
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -36,17 +35,53 @@ class ExportManager:
         self.novel_dir = self.project_root / "正文"
         self.output_dir = self.project_root / "导出"
 
+    def get_volumes(self) -> List[int]:
+        """获取卷号列表"""
+        volumes: Set[int] = set()
+        if not self.novel_dir.exists():
+            return []
+
+        for root, dirs, files in os.walk(self.novel_dir):
+            for d in dirs:
+                match = re.search(r"第([0-9]+)卷", d)
+                if match:
+                    volumes.add(int(match.group(1)))
+
+        return sorted(volumes)
+
+    def get_volume_chapters(self, volume: int) -> List[int]:
+        """获取指定卷的章节列表"""
+        chapters: List[int] = []
+        volume_dir = self.novel_dir / f"第{volume}卷"
+
+        if not volume_dir.exists():
+            for root, dirs, files in os.walk(self.novel_dir):
+                for d in dirs:
+                    if d == f"第{volume}卷":
+                        volume_dir = self.novel_dir / d
+                        break
+
+        if not volume_dir.exists():
+            return []
+
+        for root, dirs, files in os.walk(volume_dir):
+            for f in files:
+                if f.endswith(".md"):
+                    match = re.search(r"第(\d+)章", f)
+                    if match:
+                        chapters.append(int(match.group(1)))
+
+        return sorted(chapters)
+
     def get_chapter_list(self) -> List[int]:
         """获取章节列表（递归搜索所有子目录）"""
-        chapters = []
+        chapters: List[int] = []
         if not self.novel_dir.exists():
             return chapters
 
-        # 递归搜索所有子目录
         for root, dirs, files in os.walk(self.novel_dir):
             for f in files:
                 if f.endswith(".md"):
-                    # 匹配 "第XXX章" 或 "第XXX章-标题"
                     match = re.search(r"第(\d+)章", f)
                     if match:
                         chapters.append(int(match.group(1)))
@@ -65,7 +100,7 @@ class ExportManager:
         if range_str.lower() == "all":
             return self.get_chapter_list()
 
-        chapters = []
+        chapters: List[int] = []
         parts = range_str.split(",")
 
         for part in parts:
@@ -86,13 +121,11 @@ class ExportManager:
         """
         padded = f"{chapter:04d}"
 
-        # 递归搜索所有子目录
         for root, dirs, files in os.walk(self.novel_dir):
             for f in files:
                 if f.endswith(".md") and f"第{padded}章" in f:
                     file_path = os.path.join(root, f)
                     content = Path(file_path).read_text(encoding="utf-8")
-                    # 从文件名提取标题
                     title = f.replace(".md", "").replace(f"第{padded}章-", "").replace(f"第{padded}章", "")
                     return title or f"第{chapter}章", content
 
@@ -103,7 +136,7 @@ class ExportManager:
         lines = content.split("\n")
         in_frontmatter = False
         frontmatter_count = 0
-        result_lines = []
+        result_lines: List[str] = []
 
         for line in lines:
             if line.strip() == "---":
@@ -118,6 +151,43 @@ class ExportManager:
                 result_lines.append(line)
 
         return "\n".join(result_lines)
+
+    def export_to_markdown(
+        self,
+        chapters: List[int],
+        output_path: str,
+        add_separator: bool = True,
+    ) -> int:
+        """导出为 Markdown 格式
+
+        Args:
+            chapters: 章节列表
+            output_path: 输出文件路径
+            add_separator: 章节之间是否添加分隔符
+
+        Returns:
+            导出的章节数量
+        """
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_file = Path(output_path)
+        if output_file.is_dir():
+            output_file = self.output_dir / "novel.md"
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            for i, chapter in enumerate(chapters):
+                title, content = self.get_chapter_content(chapter)
+
+                f.write(f"# {title}\n\n")
+
+                clean_content = self.strip_frontmatter(content)
+                f.write(clean_content)
+
+                if add_separator and i < len(chapters) - 1:
+                    f.write("\n\n---\n\n")
+
+        print(f"OK: Exported Markdown: {output_file} ({len(chapters)} chapters)")
+        return len(chapters)
 
     def export_to_txt(
         self,
@@ -151,7 +221,6 @@ class ExportManager:
                     f.write(f"\n{title}\n")
                     f.write("=" * len(title) + "\n\n")
 
-                # 去除 frontmatter
                 clean_content = self.strip_frontmatter(content)
                 f.write(clean_content)
 
@@ -159,96 +228,6 @@ class ExportManager:
                     f.write("\n\n" + "=" * 40 + "\n\n")
 
         print(f"OK: Exported TXT: {output_file} ({len(chapters)} chapters)")
-        return len(chapters)
-
-    def export_to_docx(
-        self,
-        chapters: List[int],
-        output_path: str,
-    ) -> int:
-        """导出为 DOCX 格式（符合 docx skill 规范）
-
-        - US Letter 页面大小 (12240 x 15840 DXA)
-        - Arial 字体
-        - 段落间距 120 DXA
-        - 章节标题 Heading 1 样式
-        - 章节间分页符
-        """
-        try:
-            from docx import Document
-            from docx.shared import Pt, RGBColor, Inches
-            from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
-            from docx.oxml.shared import OxmlElement
-            from docx.oxml.ns import qn
-        except ImportError:
-            print("ERROR: python-docx not installed")
-            print("Run: pip install python-docx")
-            return 0
-
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-        output_file = Path(output_path)
-        if output_file.is_dir():
-            output_file = self.output_dir / "novel.docx"
-
-        # 创建文档，设置默认样式
-        doc = Document()
-
-        # 设置文档默认字体（符合 docx skill 规范）
-        style = doc.styles["Normal"]
-        style.font.name = "Arial"
-        style.font.size = Pt(12)
-        style._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
-
-        # 设置段落间距
-        style.paragraph_format.line_spacing = 1.5
-        style.paragraph_format.space_after = Pt(6)
-
-        # 添加小说标题
-        title = doc.add_heading(self.project_root.name, 0)
-        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-        # 设置标题样式
-        title_style = doc.styles["Heading 1"]
-        title_style.font.name = "Arial"
-        title_style.font.size = Pt(16)
-        title_style.font.bold = True
-        title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        title_style.paragraph_format.space_before = Pt(720)
-        title_style.paragraph_format.space_after = Pt(360)
-
-        for i, chapter in enumerate(chapters):
-            chapter_title, content = self.get_chapter_content(chapter)
-
-            # 章节标题（使用 Heading 1）
-            h = doc.add_heading(chapter_title, level=1)
-
-            # 获取并设置 Heading 1 样式
-            h_style = doc.styles["Heading 1"]
-            h_style.font.name = "Arial"
-            h_style.font.size = Pt(14)
-            h_style.font.bold = True
-
-            # 处理内容
-            clean_content = self.strip_frontmatter(content)
-
-            # 按段落分割，保留空行
-            paragraphs = clean_content.split("\n\n")
-            for para_text in paragraphs:
-                if para_text.strip():
-                    p = doc.add_paragraph(para_text.strip())
-                    # 设置段落样式
-                    p_format = p.paragraph_format
-                    p_format.space_before = Pt(0)
-                    p_format.space_after = Pt(6)
-                    p_format.line_spacing = 1.5
-
-            # 章节间添加分页符（最后一章除外）
-            if i < len(chapters) - 1:
-                doc.add_page_break()
-
-        doc.save(str(output_file))
-        print(f"OK: Exported DOCX: {output_file} ({len(chapters)} chapters)")
         return len(chapters)
 
     def export_to_epub(
@@ -275,7 +254,6 @@ class ExportManager:
 
         book = epub.EpubBook()
 
-        # 设置元数据
         book.set_identifier(f"novel-{self.project_root.name}")
         book.set_title(self.project_root.name)
         book.set_language(language)
@@ -287,14 +265,12 @@ class ExportManager:
         for chapter in chapters:
             chapter_title, content = self.get_chapter_content(chapter)
 
-            # 创建章节
             c = epub.EpubHtml(
                 title=chapter_title,
                 file_name=f"chapter_{chapter}.xhtml",
                 lang=language,
             )
 
-            # 处理内容为 HTML
             clean_content = self.strip_frontmatter(content)
             html_content = f'<div style="font-family: Arial, sans-serif; line-height: 1.6;">\n'
             html_content += f"<h1>{chapter_title}</h1>\n"
@@ -310,15 +286,12 @@ class ExportManager:
             spine.append(c)
             toc.append(c)
 
-        # 设置目录和脊
         book.toc = tuple(toc)
         book.spine = spine
 
-        # 添加导航文件
         book.add_item(epub.EpubNcx())
         book.add_item(epub.EpubNav())
 
-        # 保存文件
         epub.write_epub(str(output_file), book, {})
         print(f"OK: Exported EPUB: {output_file} ({len(chapters)} chapters)")
         return len(chapters)
@@ -330,11 +303,10 @@ def main():
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # list 命令
     p_list = sub.add_parser("list", help="List available chapters")
+    p_list.add_argument("--volume", type=int, help="List chapters in specific volume")
     p_list.set_defaults(func=cmd_list)
 
-    # export 命令
     p_export = sub.add_parser("export", help="Export chapters")
     p_export.add_argument(
         "--range",
@@ -342,8 +314,13 @@ def main():
         help="Chapter range, e.g., 1-10,15,20-30 or all",
     )
     p_export.add_argument(
+        "--volume",
+        type=int,
+        help="Export specific volume",
+    )
+    p_export.add_argument(
         "--format",
-        choices=["txt", "docx", "epub"],
+        choices=["markdown", "txt", "epub"],
         default="txt",
         help="Export format",
     )
@@ -356,32 +333,49 @@ def main():
 
     args = parser.parse_args()
 
+    manager = ExportManager(args.project_root)
+
     if args.command == "list":
-        manager = ExportManager(args.project_root)
-        chapters = manager.get_chapter_list()
-        if chapters:
-            print(f"Available chapters: {chapters}")
-            print(f"Total: {len(chapters)} chapters")
+        if args.volume:
+            chapters = manager.get_volume_chapters(args.volume)
+            if chapters:
+                print(f"Chapters in Volume {args.volume}: {chapters}")
+                print(f"Total: {len(chapters)} chapters")
+            else:
+                print(f"No chapters found in Volume {args.volume}")
         else:
-            print("No chapter files found")
+            chapters = manager.get_chapter_list()
+            if chapters:
+                print(f"Available chapters: {chapters}")
+                print(f"Total: {len(chapters)} chapters")
+            else:
+                print("No chapter files found")
+
+            volumes = manager.get_volumes()
+            if volumes:
+                print(f"\nAvailable volumes: {volumes}")
         return
 
     if args.command == "export":
-        manager = ExportManager(args.project_root)
-        chapters = manager.parse_chapter_range(args.range)
+        if args.volume:
+            chapters = manager.get_volume_chapters(args.volume)
+            if not chapters:
+                print(f"No chapters found in Volume {args.volume}")
+                return
+        else:
+            chapters = manager.parse_chapter_range(args.range)
 
         if not chapters:
             print("No chapters to export")
             return
 
-        # 默认输出到 导出/ 目录
         default_output = manager.output_dir / f"novel.{args.format}"
         output_path = args.output if args.output else default_output
 
-        if args.format == "txt":
+        if args.format == "markdown":
+            manager.export_to_markdown(chapters, output_path)
+        elif args.format == "txt":
             manager.export_to_txt(chapters, output_path)
-        elif args.format == "docx":
-            manager.export_to_docx(chapters, output_path)
         elif args.format == "epub":
             manager.export_to_epub(chapters, output_path, author=args.author)
 
