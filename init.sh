@@ -21,6 +21,12 @@ fi
 
 echo "Project: $PROJECT_DIR"
 
+# [0/4] Clean existing .opencode
+if [ -d ".opencode" ]; then
+    echo "[0/4] Cleaning existing .opencode..."
+    rm -rf ".opencode"
+fi
+
 # Download with retry and fallback
 MAX_RETRIES=3
 RETRY_COUNT=0

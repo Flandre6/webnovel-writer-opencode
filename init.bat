@@ -12,6 +12,11 @@ set "PROJECT_DIR=%CD%"
 set "REPO=lujih/webnovel-writer-opencode"
 set "SUCCESS=0"
 
+echo [0/4] Cleaning existing .opencode...
+if exist ".opencode" (
+    rmdir /S /Q ".opencode"
+)
+
 echo [1/4] Downloading...
 powershell -Command "try { Invoke-WebRequest -Uri 'https://github.com/%REPO%/archive/refs/heads/master.zip' -OutFile 'webnovel-writer.zip' -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop; exit 0 } catch { exit 1 }"
 if %errorlevel% neq 0 (
