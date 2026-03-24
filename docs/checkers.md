@@ -5,13 +5,16 @@
 ## 审查器架构
 
 审查器采用配置驱动架构：
-- **注册表**：`.opencode/checkers/registry.yaml` - 审查器配置
-- **Schema**：`.opencode/checkers/schema.yaml` - 输出格式定义
-- **Agent 文件**：`.opencode/agents/xxx-checker.md` - 审查器实现
+
+| 组件 | 路径 | 说明 |
+|------|------|------|
+| 注册表 | `.opencode/checkers/registry.yaml` | 审查器配置 |
+| Schema | `.opencode/checkers/schema.yaml` | 输出格式定义 |
+| Agent 文件 | `.opencode/agents/xxx-checker.md` | 审查器实现 |
 
 ## 快速开始
 
-### 使用 CLI 命令创建
+### 方式一：使用 CLI 命令创建
 
 ```bash
 python .opencode/scripts/webnovel.py checkers create \
@@ -25,11 +28,22 @@ CLI 命令会自动：
 1. 创建 Agent 文件 `.opencode/agents/new-checker.md`
 2. 注册到 `registry.yaml`
 
-### 手动创建
+### 方式二：手动创建
+
+手动创建需要以下步骤：
+
+1. 创建 Agent 文件
+2. 注册审查器
+3. （可选）扩展 Schema
+4. 验证配置
+
+---
 
 ## 步骤一：创建 Agent 文件
 
-在 `.opencode/agents/` 目录下创建新审查器文件，例如 `new-checker.md`：
+在 `.opencode/agents/` 目录下创建新审查器文件，例如 `new-checker.md`。
+
+### 文件模板
 
 ```markdown
 ---
@@ -95,19 +109,6 @@ permission:
 }
 ```
 
-## metrics 定义
-
-```json
-{
-  "metrics": {
-    "field_name": {
-      "type": "integer",
-      "description": "字段说明"
-    }
-  }
-}
-```
-
 ## 禁止事项
 
 ❌ 禁止事项 1
@@ -118,6 +119,8 @@ permission:
 - 成功标准 1
 - 成功标准 2
 ```
+
+---
 
 ## 步骤二：注册审查器
 
@@ -155,8 +158,10 @@ checkers:
 
 ### category 说明
 
-- **core**：核心审查器，始终执行
-- **conditional**：条件审查器，满足 triggers 时执行
+| 类型 | 说明 |
+|------|------|
+| `core` | 核心审查器，始终执行 |
+| `conditional` | 条件审查器，满足 triggers 时执行 |
 
 ### triggers 示例
 
@@ -166,6 +171,8 @@ triggers:
   - 有明确未闭合问题/期待锚点
   - 用户显式要求"追读力审查"
 ```
+
+---
 
 ## 步骤三：扩展 Schema（可选）
 
@@ -180,6 +187,8 @@ metrics_definitions:
         description: 字段说明
 ```
 
+---
+
 ## 步骤四：验证配置
 
 ```bash
@@ -193,21 +202,31 @@ python .opencode/scripts/webnovel.py checkers list
 python .opencode/scripts/webnovel.py checkers schema new-checker
 ```
 
+---
+
 ## 审查器分类
 
 ### 核心审查器（Core）
 
-始终执行，包括：
-- `consistency-checker` - 设定一致性
-- `continuity-checker` - 连贯性
-- `ooc-checker` - 人物 OOC
+始终执行：
+
+| 审查器 | 说明 |
+|--------|------|
+| `consistency-checker` | 设定一致性 |
+| `continuity-checker` | 连贯性 |
+| `ooc-checker` | 人物 OOC |
 
 ### 条件审查器（Conditional）
 
 满足触发条件时执行：
-- `reader-pull-checker` - 追读力
-- `high-point-checker` - 爽点密度
-- `pacing-checker` - 节奏
+
+| 审查器 | 触发条件 |
+|--------|---------|
+| `reader-pull-checker` | 非过渡章、有未闭合问题 |
+| `high-point-checker` | 关键章/高潮章、有战斗/打脸 |
+| `pacing-checker` | 章号 >= 10、节奏失衡风险 |
+
+---
 
 ## 输出格式约束
 
@@ -234,7 +253,10 @@ python .opencode/scripts/webnovel.py checkers schema new-checker
 }
 ```
 
-**关键字段**：
-- `overall_score`：使用此字段（不是 `score`）
-- `severity`：使用 `critical/high/medium/low`（全小写）
-- `issues`：数组，每个 issue 必须包含 `severity` 和 `suggestion`
+### 关键字段要求
+
+| 字段 | 要求 |
+|------|------|
+| `overall_score` | 必须使用此字段（不是 `score`） |
+| `severity` | 使用 `critical/high/medium/low`（全小写） |
+| `issues` | 数组，每个 issue 必须包含 `severity` 和 `suggestion` |
