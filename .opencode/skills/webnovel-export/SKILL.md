@@ -35,15 +35,15 @@ allowed-tools: Read Write Edit Bash Task
 - 导出文件：`导出/{filename}.{ext}`
 - workflow 任务记录完成
 
-## 环境设置
+## 环境变量说明
 
-```bash
-export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
-
-# 获取 skill 所在目录
-export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
-export SCRIPTS_DIR="${SKILL_ROOT}/../../scripts"
-```
+| 变量 | 说明 | 来源 |
+|------|------|------|
+| `CLAUDE_PROJECT_DIR` | OpenCode 当前打开的项目根目录 | OpenCode 自动设置 |
+| `WORKSPACE_ROOT` | 工作区根目录，默认为 CLAUDE_PROJECT_DIR，否则使用当前目录 | 脚本设置 |
+| `PROJECT_ROOT` | 真实书项目根目录（包含 `.webnovel/state.json` 或 `正文/` 目录） | 通过 `preflight`/`where` 命令解析 |
+| `SKILL_ROOT` | skill 所在目录 | 脚本设置 |
+| `SCRIPTS_DIR` | 脚本目录（`.opencode/scripts/`） | 脚本设置 |
 
 ## 交互流程
 
@@ -52,11 +52,7 @@ export SCRIPTS_DIR="${SKILL_ROOT}/../../scripts"
 必须做：
 - 解析真实书项目根（book project_root）：必须包含 `.webnovel/state.json` 或 `正文/` 目录
 - 校验核心输入：章节文件存在性
-- 规范化变量：
-  - `WORKSPACE_ROOT`：OpenCode 打开的工作区根目录
-  - `PROJECT_ROOT`：真实书项目根目录
-  - `SKILL_ROOT`：skill 所在目录
-  - `SCRIPTS_DIR`：脚本目录（`.opencode/scripts/`）
+- 获取 `PROJECT_ROOT`（见上方环境变量说明）
 
 环境设置（bash 命令执行前）：
 ```bash
@@ -203,9 +199,4 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" exp
 4. 确认输出目录权限和磁盘空间
 5. 重跑导出步骤
 
-## 安装可选依赖
-
-```bash
-# 安装 EPUB 支持
-pip install ebooklib
-```
+> 注意：EPUB 格式依赖 `ebooklib`，已在 init.bat/init.sh 安装 requirements.txt 时一并安装。
