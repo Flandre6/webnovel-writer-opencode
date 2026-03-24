@@ -253,6 +253,14 @@ def main() -> None:
     p_extract_context.add_argument("--chapter", type=int, required=True, help="目标章节号")
     p_extract_context.add_argument("--format", choices=["text", "json"], default="text", help="输出格式")
 
+    # export 命令（正文导出）
+    p_export = sub.add_parser("export", help="正文导出工具")
+    p_export.add_argument("--range", default="all", help="章节范围，如 1-10,15,20-30 或 all")
+    p_export.add_argument("--format", choices=["txt", "docx", "epub"], default="txt", help="导出格式")
+    p_export.add_argument("--output", help="输出文件路径")
+    p_export.add_argument("--author", default="未知作者", help="作者名（EPUB/DOCX）")
+    p_export.add_argument("args", nargs=argparse.REMAINDER, help="额外参数")
+
     # 兼容：允许 `--project-root` 出现在任意位置（减少 agents/skills 拼命令的出错率）
     from .cli_args import normalize_global_project_root
 
@@ -313,6 +321,35 @@ def main() -> None:
     if tool == "extract-context":
         return_args = [*forward_args, "--chapter", str(args.chapter), "--format", str(args.format)]
         raise SystemExit(_run_script("extract_chapter_context.py", return_args))
+
+    if tool == "export":
+        # 构建参数: --project-root XXX [list|export] [options]
+        export_args = []
+        
+        # 检查是否有显式子命令（在 rest 中）
+        has_explicit_subcmd = rest and rest[0] in ("list", "export")
+        
+        if not has_explicit_subcmd:
+            # 检查是否使用 list 子命令（无额外选项时默认是 list）
+            if not getattr(args, 'range', None) and not getattr(args, 'format', None):
+                export_args.append("list")
+            else:
+                # 使用 export 子命令并添加选项
+                export_args.append("export")
+                if getattr(args, 'range', None) and args.range != "all":
+                    export_args.extend(["--range", str(args.range)])
+                if getattr(args, 'format', None):
+                    export_args.extend(["--format", str(args.format)])
+                if getattr(args, 'output', None):
+                    export_args.extend(["--output", str(args.output)])
+                if getattr(args, 'author', None):
+                    export_args.extend(["--author", str(args.author)])
+        else:
+            # 显式子命令
+            export_args.append(rest[0])
+            export_args.extend(rest[1:])
+        
+        raise SystemExit(_run_script("export_manager.py", [*forward_args, *export_args]))
 
     raise SystemExit(2)
 
