@@ -88,7 +88,7 @@ python -X utf8 ".opencode/scripts/webnovel.py" --project-root "D:/wk/我的小�
 
 ### 导出单章为 DOCX
 ```bash
-python -X utf8 ".opencode/scripts/webnovel.py" --project-root "D:/wk/我的小说" export --chapter 31 --format docx
+python -X utf8 ".opencode/scripts/webnovel.py" --project-root "D:/wk/我的小说" export --range 31 --format docx
 ```
 
 ## 安装可选依赖

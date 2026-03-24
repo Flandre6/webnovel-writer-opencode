@@ -6,17 +6,26 @@
 支持将章节正文导出为多种格式：
 - TXT: 纯文本
 - EPUB: 电子书
-- DOCX: Word 文档
+- DOCX: Word 文档（符合 docx skill 规范）
 """
 
 from __future__ import annotations
 
 import argparse
+import io
 import os
 import re
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
+
+# Windows 控制台编码修复
+if sys.platform == "win32":
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 
 class ExportManager:
@@ -86,6 +95,27 @@ class ExportManager:
 
         return f"第{chapter}章", ""
 
+    def strip_frontmatter(self, content: str) -> str:
+        """去除 frontmatter"""
+        lines = content.split("\n")
+        in_frontmatter = False
+        frontmatter_count = 0
+        result_lines = []
+
+        for line in lines:
+            if line.strip() == "---":
+                frontmatter_count += 1
+                if frontmatter_count == 1:
+                    in_frontmatter = True
+                    continue
+                elif frontmatter_count == 2:
+                    in_frontmatter = False
+                    continue
+            if not in_frontmatter and line.strip():
+                result_lines.append(line)
+
+        return "\n".join(result_lines)
+
     def export_to_txt(
         self,
         chapters: List[int],
@@ -118,27 +148,14 @@ class ExportManager:
                     f.write(f"\n{title}\n")
                     f.write("=" * len(title) + "\n\n")
 
-                # 去除 frontmatter（--- 之间的内容）
-                lines = content.split("\n")
-                in_frontmatter = False
-                frontmatter_count = 0
-
-                for line in lines:
-                    if line.strip() == "---":
-                        frontmatter_count += 1
-                        if frontmatter_count == 1:
-                            in_frontmatter = True
-                            continue
-                        elif frontmatter_count == 2:
-                            in_frontmatter = False
-                            continue
-                    if not in_frontmatter and line.strip():
-                        f.write(line + "\n")
+                # 去除 frontmatter
+                clean_content = self.strip_frontmatter(content)
+                f.write(clean_content)
 
                 if add_separator and i < len(chapters) - 1:
-                    f.write("\n" + "=" * 40 + "\n\n")
+                    f.write("\n\n" + "=" * 40 + "\n\n")
 
-        print(f"✓ 已导出 TXT: {output_file} ({len(chapters)} 章)")
+        print(f"OK: Exported TXT: {output_file} ({len(chapters)} chapters)")
         return len(chapters)
 
     def export_to_docx(
@@ -146,14 +163,23 @@ class ExportManager:
         chapters: List[int],
         output_path: str,
     ) -> int:
-        """导出为 DOCX 格式"""
+        """导出为 DOCX 格式（符合 docx skill 规范）
+
+        - US Letter 页面大小 (12240 x 15840 DXA)
+        - Arial 字体
+        - 段落间距 120 DXA
+        - 章节标题 Heading 1 样式
+        - 章节间分页符
+        """
         try:
             from docx import Document
-            from docx.shared import Pt, RGBColor
-            from docx.enum.text import WD_ALIGN_PARAGRAPH
+            from docx.shared import Pt, RGBColor, Inches
+            from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+            from docx.oxml.shared import OxmlElement
+            from docx.oxml.ns import qn
         except ImportError:
-            print("错误: 需要安装 python-docx 库")
-            print("运行: pip install python-docx")
+            print("ERROR: python-docx not installed")
+            print("Run: pip install python-docx")
             return 0
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -162,45 +188,71 @@ class ExportManager:
         if output_file.is_dir():
             output_file = self.output_dir / "novel.docx"
 
+        # 创建文档，设置默认样式
         doc = Document()
 
-        # 添加标题
+        # 设置文档默认字体（符合 docx skill 规范）
+        style = doc.styles["Normal"]
+        style.font.name = "Arial"
+        style.font.size = Pt(12)
+        style._element.rPr.rFonts.set(qn("w:eastAsia"), "宋体")
+
+        # 设置段落间距
+        style.paragraph_format.line_spacing = 1.5
+        style.paragraph_format.space_after = Pt(6)
+
+        # 添加小说标题
         title = doc.add_heading(self.project_root.name, 0)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        for chapter in chapters:
+        # 设置标题样式
+        title_style = doc.styles["Heading 1"]
+        title_style.font.name = "Arial"
+        title_style.font.size = Pt(16)
+        title_style.font.bold = True
+        title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        title_style.paragraph_format.space_before = Pt(720)
+        title_style.paragraph_format.space_after = Pt(360)
+
+        for i, chapter in enumerate(chapters):
             chapter_title, content = self.get_chapter_content(chapter)
 
-            # 章节标题
+            # 章节标题（使用 Heading 1）
             h = doc.add_heading(chapter_title, level=1)
 
+            # 获取并设置 Heading 1 样式
+            h_style = doc.styles["Heading 1"]
+            h_style.font.name = "Arial"
+            h_style.font.size = Pt(14)
+            h_style.font.bold = True
+
             # 处理内容
-            lines = content.split("\n")
-            in_frontmatter = False
-            frontmatter_count = 0
+            clean_content = self.strip_frontmatter(content)
 
-            for line in lines:
-                if line.strip() == "---":
-                    frontmatter_count += 1
-                    if frontmatter_count == 1:
-                        in_frontmatter = True
-                        continue
-                    elif frontmatter_count == 2:
-                        in_frontmatter = False
-                        continue
+            # 按段落分割，保留空行
+            paragraphs = clean_content.split("\n\n")
+            for para_text in paragraphs:
+                if para_text.strip():
+                    p = doc.add_paragraph(para_text.strip())
+                    # 设置段落样式
+                    p_format = p.paragraph_format
+                    p_format.space_before = Pt(0)
+                    p_format.space_after = Pt(6)
+                    p_format.line_spacing = 1.5
 
-                if not in_frontmatter and line.strip():
-                    p = doc.add_paragraph(line)
+            # 章节间添加分页符（最后一章除外）
+            if i < len(chapters) - 1:
+                doc.add_page_break()
 
         doc.save(str(output_file))
-        print(f"✓ 已导出 DOCX: {output_file} ({len(chapters)} 章)")
+        print(f"OK: Exported DOCX: {output_file} ({len(chapters)} chapters)")
         return len(chapters)
 
     def export_to_epub(
         self,
         chapters: List[int],
         output_path: str,
-        author: str = "未知作者",
+        author: str = "Unknown Author",
         language: str = "zh-CN",
     ) -> int:
         """导出为 EPUB 格式"""
@@ -208,8 +260,8 @@ class ExportManager:
             import ebooklib
             from ebooklib import epub
         except ImportError:
-            print("错误: 需要安装 ebooklib 库")
-            print("运行: pip install ebooklib")
+            print("ERROR: ebooklib not installed")
+            print("Run: pip install ebooklib")
             return 0
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -240,25 +292,15 @@ class ExportManager:
             )
 
             # 处理内容为 HTML
-            html_content = f"<h1>{chapter_title}</h1>\n"
+            clean_content = self.strip_frontmatter(content)
+            html_content = f'<div style="font-family: Arial, sans-serif; line-height: 1.6;">\n'
+            html_content += f"<h1>{chapter_title}</h1>\n"
 
-            lines = content.split("\n")
-            in_frontmatter = False
-            frontmatter_count = 0
+            for para in clean_content.split("\n\n"):
+                if para.strip():
+                    html_content += f"<p>{para.strip()}</p>\n"
 
-            for line in lines:
-                if line.strip() == "---":
-                    frontmatter_count += 1
-                    if frontmatter_count == 1:
-                        in_frontmatter = True
-                        continue
-                    elif frontmatter_count == 2:
-                        in_frontmatter = False
-                        continue
-
-                if not in_frontmatter and line.strip():
-                    html_content += f"<p>{line}</p>\n"
-
+            html_content += "</div>"
             c.content = html_content
             book.add_item(c)
 
@@ -275,38 +317,38 @@ class ExportManager:
 
         # 保存文件
         epub.write_epub(str(output_file), book, {})
-        print(f"✓ 已导出 EPUB: {output_file} ({len(chapters)} 章)")
+        print(f"OK: Exported EPUB: {output_file} ({len(chapters)} chapters)")
         return len(chapters)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="正文导出工具")
-    parser.add_argument("--project-root", required=True, help="项目根目录")
+    parser = argparse.ArgumentParser(description="Novel Export Tool")
+    parser.add_argument("--project-root", required=True, help="Project root directory")
 
     sub = parser.add_subparsers(dest="command", required=True)
 
     # list 命令
-    p_list = sub.add_parser("list", help="列出可导出章节")
+    p_list = sub.add_parser("list", help="List available chapters")
     p_list.set_defaults(func=cmd_list)
 
     # export 命令
-    p_export = sub.add_parser("export", help="导出正文")
+    p_export = sub.add_parser("export", help="Export chapters")
     p_export.add_argument(
         "--range",
         default="all",
-        help="章节范围，如 1-10,15,20-30 或 all",
+        help="Chapter range, e.g., 1-10,15,20-30 or all",
     )
     p_export.add_argument(
         "--format",
         choices=["txt", "docx", "epub"],
         default="txt",
-        help="导出格式",
+        help="Export format",
     )
     p_export.add_argument(
         "--output",
-        help="输出文件路径（默认自动生成）",
+        help="Output file path (auto-generated if not specified)",
     )
-    p_export.add_argument("--author", default="未知作者", help="作者名（EPUB/DOCX）")
+    p_export.add_argument("--author", default="Unknown Author", help="Author name")
     p_export.set_defaults(func=cmd_export)
 
     args = parser.parse_args()
@@ -315,10 +357,10 @@ def main():
         manager = ExportManager(args.project_root)
         chapters = manager.get_chapter_list()
         if chapters:
-            print(f"可导出章节: {chapters}")
-            print(f"共 {len(chapters)} 章")
+            print(f"Available chapters: {chapters}")
+            print(f"Total: {len(chapters)} chapters")
         else:
-            print("未找到章节文件")
+            print("No chapter files found")
         return
 
     if args.command == "export":
@@ -326,7 +368,7 @@ def main():
         chapters = manager.parse_chapter_range(args.range)
 
         if not chapters:
-            print("没有可导出的章节")
+            print("No chapters to export")
             return
 
         output_path = args.output or f"novel.{args.format}"
