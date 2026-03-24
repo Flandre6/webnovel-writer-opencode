@@ -57,8 +57,12 @@ allowed-tools: Read Write Edit Grep Bash Task
 ### 根目录
 
 - `../../checkers/registry.yaml`
-  - 用途：审查器注册表，包含 core/conditional 分类、触发条件、模式配置。
+  - 用途：审查器注册表，包含审查器列表、分类（core/conditional）、触发条件、模式配置，`file` 字段指向 agent 文件。
   - 触发：Step 3 必读（用于动态加载审查器列表）。
+- `../../agents/*.md`（审查器 agent 文件）
+  - 用途：审查器实际逻辑实现，包含 prompt 模板和输出格式定义。
+  - 路径：由 registry.yaml 中各审查器的 `file` 字段指定（如 `../agents/consistency-checker.md`）。
+  - 触发：Task 调用审查器时自动加载。
 - `../../checkers/schema.yaml`
   - 用途：审查器输出 Schema 定义，包含 metrics 结构。
   - 触发：Step 3 必读（用于校验审查器输出格式）。
@@ -224,7 +228,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --mode standard --form
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers validate
 ```
 
-审查器配置来源：`../../checkers/registry.yaml`
+审查器配置来源：`../../checkers/registry.yaml`（配置） + `../../agents/*.md`（实现）
 
 **模式判定**：
 - `--minimal`：`--mode minimal`（只执行核心审查器）
@@ -255,7 +259,7 @@ Task 1:
       对第 {chapter} 章执行设定一致性审查。
       - 章节文件：{chapter_file}
       - 项目根：{PROJECT_ROOT}
-      - 审查器定义见：.opencode/agents/consistency-checker.md
+      - 审查器实现见：.opencode/agents/consistency-checker.md（由 registry.yaml 的 file 字段指定）
 
 Task 2:
   - agent/subagent: continuity-checker
@@ -263,7 +267,7 @@ Task 2:
       对第 {chapter} 章执行连贯性审查。
       - 章节文件：{chapter_file}
       - 项目根：{PROJECT_ROOT}
-      - 审查器定义见：.opencode/agents/continuity-checker.md
+      - 审查器实现见：.opencode/agents/continuity-checker.md（由 registry.yaml 的 file 字段指定）
 
 Task 3:
   - agent/subagent: ooc-checker
@@ -271,7 +275,7 @@ Task 3:
       对第 {chapter} 章执行人物OOC审查。
       - 章节文件：{chapter_file}
       - 项目根：{PROJECT_ROOT}
-      - 审查器定义见：.opencode/agents/ooc-checker.md
+      - 审查器实现见：.opencode/agents/ooc-checker.md（由 registry.yaml 的 file 字段指定）
 
 （条件审查器若有触发，按同样方式调用）
 ```
