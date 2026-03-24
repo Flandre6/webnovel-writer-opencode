@@ -20,13 +20,49 @@ allowed-tools: Read Write Edit Bash
 
 ## 使用方式
 
-### 1. 列出可导出章节
+### 1. 交互式导出（推荐）
+
+直接运行 `export` 命令不带任何参数，进入交互式导出向导：
+
+```bash
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export
+```
+
+交互流程：
+```
+=== 正文导出 ===
+项目: 我的小说
+共 100 章，3 卷
+
+请选择导出格式:
+  [1] Markdown    [2] TXT    [3] EPUB
+格式 [1]: 1
+  -> markdown
+
+请选择导出范围:
+  [1] 全部章节 (100 章)
+  [2] 按章节范围
+  [3] 按卷 (第1卷(30章), 第2卷(40章), 第3卷(30章))
+范围 [1]: 3
+  请选择卷号 (1, 2, 3): 2
+  -> 第2卷，共 40 章
+
+导出文件路径 [导出/novel.md]:
+路径 (回车使用默认): 导出/第二卷.md
+  -> 导出/第二卷.md
+
+确认导出? [Y/n]: y
+
+OK: Exported Markdown: 导出/第二卷.md (40 chapters)
+```
+
+### 2. 列出可导出章节
 
 ```bash
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export list
 ```
 
-### 2. 导出全部章节
+### 3. 导出全部章节
 
 ```bash
 # 导出为 Markdown
@@ -39,7 +75,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" exp
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --format epub --author "作者名"
 ```
 
-### 3. 导出指定章节
+### 4. 导出指定章节
 
 ```bash
 # 导出第 1-10 章
@@ -52,7 +88,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" exp
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --range 20-30 --format epub
 ```
 
-### 4. 导出指定卷
+### 5. 导出指定卷
 
 ```bash
 # 导出第 1 卷
@@ -62,7 +98,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" exp
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --volume 2 --format epub --author "作者名"
 ```
 
-### 5. 指定输出路径
+### 6. 指定输出路径
 
 ```bash
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --format markdown --output 我的小说.md
