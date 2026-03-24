@@ -338,10 +338,12 @@
 
 ## 五、兼容性说明
 
-### 5.1 与现有 checker 的对接
+### 5.1 与现有审查器的对接
 
-| 现有 Checker | 使用的 Taxonomy |
-|--------------|----------------|
+> 审查器列表和配置现已迁移至 `../../checkers/registry.yaml`
+
+| 审查器 | 使用的 Taxonomy |
+|--------|----------------|
 | `reader-pull-checker` | 钩子类型、钩子强度、Hard-002 |
 | `high-point-checker` | 爽点模式、微兑现 |
 | `pacing-checker` | Hard-003 (节奏灾难) |

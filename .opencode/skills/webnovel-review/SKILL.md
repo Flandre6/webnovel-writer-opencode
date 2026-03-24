@@ -93,19 +93,89 @@ cat "$PROJECT_ROOT/.webnovel/state.json"
 
 ## Step 3: 并行调用检查员（Task）
 
-**调用约束**:
-- 必须通过 `Task` 工具调用审查 subagent，禁止主流程直接内联审查结论。
-- 各 subagent 结果全部返回后再生成总评与优先级。
+#### 3.1 确定审查深度
 
-**Core**:
-- `consistency-checker`
-- `continuity-checker`
-- `ooc-checker`
-- `reader-pull-checker`
+**审查深度**：
+- **Core（默认）**：执行核心审查器（category: core）
+- **Full**：执行核心 + 条件审查器（category: conditional）
 
-**Full 追加**:
-- `high-point-checker`
-- `pacing-checker`
+执行前加载审查器配置：
+```bash
+# Core 审查器
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --category core --format json
+
+# Full 模式
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --mode full --format json
+```
+
+#### 3.2 调用审查器（关键）
+
+**审查器配置来源**：`../../checkers/registry.yaml`
+
+**⚠️ 重要约束**：
+- 必须让 OpenCode 加载 agent 文件的完整定义
+- **不要**在 prompt 中包含具体检查项、JSON 模板、评分标准
+- prompt 中只传递必要参数（章节号、文件路径、项目根）
+
+**Task 调用模板**：
+```
+并行调用审查器（使用 Task 工具）：
+
+Task 1:
+  - agent/subagent: consistency-checker
+  - prompt: |
+      对第 {chapter} 章执行设定一致性审查。
+      - 章节文件：{chapter_file}
+      - 项目根：{PROJECT_ROOT}
+      - 审查器定义见：.opencode/agents/consistency-checker.md
+
+Task 2:
+  - agent/subagent: continuity-checker
+  - prompt: |
+      对第 {chapter} 章执行连贯性审查。
+      - 章节文件：{chapter_file}
+      - 项目根：{PROJECT_ROOT}
+      - 审查器定义见：.opencode/agents/continuity-checker.md
+
+Task 3:
+  - agent/subagent: ooc-checker
+  - prompt: |
+      对第 {chapter} 章执行人物OOC审查。
+      - 章节文件：{chapter_file}
+      - 项目根：{PROJECT_ROOT}
+      - 审查器定义见：.opencode/agents/ooc-checker.md
+
+（其他审查器按同样方式调用）
+```
+
+#### 3.3 审查器输出格式约束
+
+所有审查器必须返回符合 schema.yaml 的统一格式：
+
+```json
+{
+  "agent": "审查器ID",
+  "chapter": 章节号,
+  "overall_score": 0-100,
+  "pass": true/false,
+  "issues": [
+    {
+      "id": "ISSUE_001",
+      "type": "问题类型",
+      "severity": "critical|high|medium|low",
+      "description": "问题描述",
+      "location": "位置",
+      "suggestion": "修复建议"
+    }
+  ],
+  "metrics": {...},
+  "summary": "一句话总结"
+}
+```
+
+**字段统一性要求**：
+- ✅ 使用 `overall_score`（不是 `score`）
+- ✅ `severity` 使用 `critical/high/medium/low`（全小写）
 
 ## Step 4: 生成审查报告
 

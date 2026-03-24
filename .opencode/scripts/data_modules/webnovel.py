@@ -226,6 +226,10 @@ def main() -> None:
     p_migrate = sub.add_parser("migrate", help="转发到 migrate_state_to_sqlite")
     p_migrate.add_argument("args", nargs=argparse.REMAINDER)
 
+    # checkers 子命令（审查器配置管理）
+    p_checkers = sub.add_parser("checkers", help="审查器配置管理")
+    p_checkers.add_argument("args", nargs=argparse.REMAINDER)
+
     # Pass-through to scripts
     p_workflow = sub.add_parser("workflow", help="转发到 workflow_manager.py")
     p_workflow.add_argument("args", nargs=argparse.REMAINDER)
@@ -271,6 +275,10 @@ def main() -> None:
     if tool == "init":
         raise SystemExit(_run_script("init_project.py", rest))
 
+    # checkers 是审查器配置管理，不需要 project_root
+    if tool == "checkers":
+        raise SystemExit(_run_data_module("checkers_manager", rest))
+
     # 其余工具：统一解析 project_root 后前置给下游
     project_root = _resolve_root(args.project_root)
     forward_args = ["--project-root", str(project_root)]
@@ -289,6 +297,8 @@ def main() -> None:
         raise SystemExit(_run_data_module("context_manager", [*forward_args, *rest]))
     if tool == "migrate":
         raise SystemExit(_run_data_module("migrate_state_to_sqlite", [*forward_args, *rest]))
+    if tool == "checkers":
+        raise SystemExit(_run_data_module("checkers_manager", rest))
 
     if tool == "workflow":
         raise SystemExit(_run_script("workflow_manager.py", [*forward_args, *rest]))

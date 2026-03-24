@@ -13,7 +13,7 @@ permission:
 
 > **职责**: 节奏分析师，执行 Strand Weave 平衡检查，防止读者疲劳。
 
-> **输出格式**: 遵循 `.opencode/references/checker-output-schema.md` 统一 JSON Schema
+> **输出格式**: 遵循 `../checkers/schema.yaml` 统一 JSON Schema
 
 ## 检查范围
 

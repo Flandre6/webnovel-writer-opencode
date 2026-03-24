@@ -13,7 +13,7 @@ permission:
 
 > **职责**: 读者满足感机制的质量保障专家（爽点设计）。
 
-> **输出格式**: 遵循 `.opencode/references/checker-output-schema.md` 统一 JSON Schema
+> **输出格式**: 遵循 `../checkers/schema.yaml` 统一 JSON Schema
 
 ## 核心参考
 

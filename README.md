@@ -91,12 +91,15 @@ RERANK_API_KEY=your_api_key
 | `pacing-checker` | Strand Weave 节奏检查，防止读者疲劳 |
 | `reader-pull-checker` | 追读力检查，评估钩子/微兑现/约束分层 |
 
+> 审查器现已配置驱动管理，配置文件位于 `.opencode/checkers/registry.yaml`
+
 ## 项目结构
 
 ```
 项目目录/
 ├── .opencode/              # OpenCode 配置
-│   ├── agents/           # 8个 Agent 定义（Markdown格式）
+│   ├── agents/           # Agent 定义（context-agent, data-agent）
+│   ├── checkers/        # 审查器配置（registry.yaml, schema.yaml, agents/）
 │   ├── skills/           # 7个 Skills
 │   ├── scripts/          # Python 核心脚本
 │   ├── references/       # 参考文档

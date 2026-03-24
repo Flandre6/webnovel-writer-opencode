@@ -56,9 +56,12 @@ allowed-tools: Read Write Edit Grep Bash Task
 
 ### 根目录
 
-- `references/step-3-review-gate.md`
-  - 用途：Step 3 审查调用模板、汇总格式、落库 JSON 规范。
-  - 触发：Step 3 必读。
+- `../../checkers/registry.yaml`
+  - 用途：审查器注册表，包含 core/conditional 分类、触发条件、模式配置。
+  - 触发：Step 3 必读（用于动态加载审查器列表）。
+- `../../checkers/schema.yaml`
+  - 用途：审查器输出 Schema 定义，包含 metrics 结构。
+  - 触发：Step 3 必读（用于校验审查器输出格式）。
 - `references/step-5-debt-switch.md`
   - 用途：Step 5 债务利息开关规则（默认关闭）。
   - 触发：Step 5 必读。
@@ -208,38 +211,131 @@ cat "${SKILL_ROOT}/references/style-adapter.md"
 输出：
 - 风格化正文（覆盖原章节文件）。
 
-### Step 3：审查（auto 路由，必须由 Task 子代理执行）
+### Step 3：审查（必须由 Task 子代理执行）
 
-执行前加载：
+#### 3.1 确定应执行的审查器
+
+执行前加载审查器配置：
 ```bash
-cat "${SKILL_ROOT}/references/step-3-review-gate.md"
+# 获取标准模式审查器列表
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --mode standard --format json
+
+# 验证审查器配置完整性
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers validate
 ```
 
-调用约束：
-- 必须用 `Task` 调用审查 subagent，禁止主流程伪造审查结论。
-- 可并行发起审查，统一汇总 `issues/severity/overall_score`。
-- 默认使用 `auto` 路由：根据“本章执行合同 + 正文信号 + 大纲标签”动态选择审查器。
+审查器配置来源：`../../checkers/registry.yaml`
 
-核心审查器（始终执行）：
-- `consistency-checker`
-- `continuity-checker`
-- `ooc-checker`
+**模式判定**：
+- `--minimal`：`--mode minimal`（只执行核心审查器）
+- `--fast`/标准：`--mode standard`（执行核心 + 条件命中）
 
-条件审查器（`auto` 命中时执行）：
-- `reader-pull-checker`
-- `high-point-checker`
-- `pacing-checker`
+**审查器分类**：
+- 核心审查器（始终执行）：由 registry.yaml 中 `category: core` 定义
+- 条件审查器（满足任一条件则执行）：
+  - `reader-pull-checker`：非过渡章、有未闭合问题
+  - `high-point-checker`：关键章/高潮章、有战斗/打脸/反转信号
+  - `pacing-checker`：章号 >= 10 或节奏失衡风险
 
-模式说明：
-- 标准/`--fast`：核心 3 个 + auto 命中的条件审查器
-- `--minimal`：只跑核心 3 个（忽略条件审查器）
+#### 3.2 调用审查器（关键）
+
+**⚠️ 重要约束**：
+- 必须让 OpenCode 加载 agent 文件的完整定义
+- **不要**在 prompt 中包含具体检查项、JSON 模板、评分标准
+- prompt 中只传递必要参数（章节号、文件路径、项目根）
+- 如需传递额外上下文（如上章钩子、大纲标签），只放在 prompt 最后作为"背景信息"
+
+**Task 调用模板**：
+```
+并行调用审查器（使用 Task 工具）：
+
+Task 1:
+  - agent/subagent: consistency-checker
+  - prompt: |
+      对第 {chapter} 章执行设定一致性审查。
+      - 章节文件：{chapter_file}
+      - 项目根：{PROJECT_ROOT}
+      - 审查器定义见：.opencode/agents/consistency-checker.md
+
+Task 2:
+  - agent/subagent: continuity-checker
+  - prompt: |
+      对第 {chapter} 章执行连贯性审查。
+      - 章节文件：{chapter_file}
+      - 项目根：{PROJECT_ROOT}
+      - 审查器定义见：.opencode/agents/continuity-checker.md
+
+Task 3:
+  - agent/subagent: ooc-checker
+  - prompt: |
+      对第 {chapter} 章执行人物OOC审查。
+      - 章节文件：{chapter_file}
+      - 项目根：{PROJECT_ROOT}
+      - 审查器定义见：.opencode/agents/ooc-checker.md
+
+（条件审查器若有触发，按同样方式调用）
+```
+
+#### 3.3 审查器输出格式约束
+
+所有审查器必须返回符合 schema.yaml 的统一格式：
+
+```json
+{
+  "agent": "审查器ID（必须与 registry.yaml 一致）",
+  "chapter": 章节号,
+  "overall_score": 0-100,
+  "pass": true/false,
+  "issues": [
+    {
+      "id": "ISSUE_001",
+      "type": "问题类型",
+      "severity": "critical|high|medium|low",
+      "description": "问题描述",
+      "location": "位置（如第5段）",
+      "suggestion": "修复建议"
+    }
+  ],
+  "metrics": {...},
+  "summary": "一句话总结"
+}
+```
+
+**字段统一性要求**：
+- ✅ 使用 `overall_score`（不是 `score`）
+- ✅ `severity` 使用 `critical/high/medium/low`（全小写）
+- ✅ `issues` 是数组，每个 issue 包含 `severity` 和 `suggestion`
+
+#### 3.4 汇总审查结果
+
+各审查器返回后，按以下格式汇总：
+
+```json
+{
+  "checker_results": [
+    {"agent": "审查器ID", "overall_score": 85, "pass": true, "issues": [...]},
+    ...
+  ],
+  "overall_score": "各审查器评分的平均值",
+  "severity_counts": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+  "critical_issues": ["关键问题列表"],
+  "can_proceed": "severity_counts.critical == 0"
+}
+```
+
+**汇总规则**：
+- `overall_score` = 各审查器 `overall_score` 的加权平均
+- dimension_scores 按 registry.yaml 中的 dimension_mapping 映射
+- 若 `critical > 0`，必须修复后才能进入 Step 4
+
+#### 3.5 保存审查指标
 
 审查指标落库（必做）：
 ```bash
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" index save-review-metrics --data "@${PROJECT_ROOT}/.webnovel/tmp/review_metrics.json"
 ```
 
-review_metrics 字段约束（当前工作流约定只传以下字段）：
+review_metrics 字段约束：
 ```json
 {
   "start_chapter": 100,
@@ -249,15 +345,13 @@ review_metrics 字段约束（当前工作流约定只传以下字段）：
   "severity_counts": {"critical": 0, "high": 1, "medium": 2, "low": 0},
   "critical_issues": ["问题描述"],
   "report_file": "审查报告/第100-100章审查报告.md",
-  "notes": "单个字符串；selected_checkers / timeline_gate / anti_ai_force_check 等扩展信息压成单行文本写入此字段"
+  "notes": "单个字符串；selected_checkers / timeline_gate 等扩展信息压成单行"
 }
 ```
-- `notes` 在当前执行契约中必须是单个字符串，不得传入对象或数组。
-- 当前工作流不额外传入其它顶层字段；脚本侧未在此处做新增硬校验。
 
-硬要求：
-- `--minimal` 也必须产出 `overall_score`。
-- 未落库 `review_metrics` 不得进入 Step 5。
+**硬要求**：
+- `--minimal` 也必须产出 `overall_score`
+- 未落库 `review_metrics` 不得进入 Step 5
 
 ### Step 4：润色（问题修复优先）
 

@@ -24,7 +24,8 @@
 |---|---|---|---|
 | `.opencode/scripts/webnovel.py` | 所有 Skills / Agents | 任何需要调用 CLI 的节点 | **统一入口**：负责解析真实 book project_root，并转发到 `data_modules/*` 或 `scripts/*.py`，避免 `PYTHONPATH/cd/参数顺序` 导致的隐性失败 |
 | `.opencode/scripts/update_state.py` | `webnovel-plan` Skill | 章纲/卷规划落盘后更新 `state.json` | 也可被自动化脚本调用；默认不是人工常规入口 |
-| `.opencode/scripts/status_reporter.py` | `webnovel-query` Skill / `pacing-checker` Agent(可选) | 查询分析或节奏审查时 | 产出健康报告与紧急度分析 |
+| `.opencode/scripts/status_reporter.py` | `webnovel-query` Skill | 查询分析或节奏审查时 | 产出健康报告与紧急度分析 |
+| `.opencode/scripts/data_modules/checkers_manager.py` | Skills / Agents | 审查器配置管理 | 列出/验证/创建审查器 |
 | `.opencode/scripts/workflow_manager.py` | `webnovel-resume` Skill | 恢复流程 detect/cleanup/clear | 仅恢复场景触发 |
 | `.opencode/scripts/init_project.py` | `webnovel-init` Skill | 项目初始化阶段 | 负责项目脚手架与基础状态文件 |
 

@@ -13,7 +13,7 @@ permission:
 
 > **职责**: 设定守卫者，执行第二防幻觉定律（设定即物理）。
 
-> **输出格式**: 遵循 `.opencode/references/checker-output-schema.md` 统一 JSON Schema
+> **输出格式**: 遵循 `../checkers/schema.yaml` 统一 JSON Schema
 
 ## 检查范围
 
