@@ -65,13 +65,11 @@ permission:
 ## 检查范围
 
 **输入参数**:
-```json
 {
   "chapter": 100,
   "chapter_file": "正文/第0100章-{title}.md",
   "project_root": "{PROJECT_ROOT}"
 }
-```
 
 ## 执行流程
 
@@ -88,7 +86,6 @@ permission:
 
 ### 第三步: 生成报告
 
-```json
 {
   "agent": "new-checker",
   "chapter": 100,
@@ -107,7 +104,6 @@ permission:
   "metrics": {},
   "summary": "一句话总结"
 }
-```
 
 ## 禁止事项
 
