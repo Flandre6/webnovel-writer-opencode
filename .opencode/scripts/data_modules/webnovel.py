@@ -253,6 +253,10 @@ def main() -> None:
     p_extract_context.add_argument("--chapter", type=int, required=True, help="目标章节号")
     p_extract_context.add_argument("--format", choices=["text", "json"], default="text", help="输出格式")
 
+    # export 命令（正文导出）
+    p_export = sub.add_parser("export", help="正文导出工具")
+    p_export.add_argument("args", nargs=argparse.REMAINDER)
+
     # 兼容：允许 `--project-root` 出现在任意位置（减少 agents/skills 拼命令的出错率）
     from .cli_args import normalize_global_project_root
 
@@ -313,6 +317,9 @@ def main() -> None:
     if tool == "extract-context":
         return_args = [*forward_args, "--chapter", str(args.chapter), "--format", str(args.format)]
         raise SystemExit(_run_script("extract_chapter_context.py", return_args))
+
+    if tool == "export":
+        raise SystemExit(_run_script("export_manager.py", [*forward_args, *rest]))
 
     raise SystemExit(2)
 
