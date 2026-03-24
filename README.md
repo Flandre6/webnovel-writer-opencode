@@ -92,6 +92,8 @@ RERANK_API_KEY=your_api_key
 | `reader-pull-checker` | 追读力检查，评估钩子/微兑现/约束分层 |
 
 > 审查器配置驱动管理，配置文件位于 `.opencode/checkers/registry.yaml`
+> 
+> 详细开发指南请参阅 [审查器开发指南](docs/checkers.md)
 
 ### 审查器管理命令
 
