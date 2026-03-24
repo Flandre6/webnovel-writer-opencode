@@ -127,6 +127,32 @@ except ImportError:
 ```
 项目目录/
 ├── .opencode/              # OpenCode 配置
+│   ├── agents/            # Agent 定义（Markdown格式）
+│   │   ├── context-agent.md
+│   │   ├── data-agent.md
+│   │   └── *-checker.md  # 审查器
+│   ├── checkers/         # 审查器配置驱动
+│   │   ├── registry.yaml # 审查器注册表
+│   │   ├── schema.yaml   # 输出 Schema 定义
+│   │   └── templates/    # 审查器模板
+│   ├── skills/           # 7个 Skills
+│   ├── scripts/          # Python 核心
+│   │   └── data_modules/ # 核心模块
+│   │       ├── state_manager.py
+│   │       ├── context_manager.py
+│   │       ├── index_manager.py
+│   │       ├── api_client.py
+│   │       ├── checkers_manager.py
+│   │       └── tests/    # 测试文件
+│   ├── references/      # 参考文档
+│   ├── genres/          # 题材参考
+│   └── templates/       # 输出模板
+├── opencode.json        # Agent 配置
+├── .env                 # API 配置
+└── init.sh / init.bat  # 安装脚本
+```
+项目目录/
+├── .opencode/              # OpenCode 配置
 │   ├── agents/           # 8个 Agent 定义（Markdown格式）
 │   ├── skills/           # 7个 Skills
 │   ├── scripts/           # Python 核心
