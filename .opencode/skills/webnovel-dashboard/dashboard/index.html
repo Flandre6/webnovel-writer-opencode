@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小说架构看板 - 末世降临</title>
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Vis.js Timeline -->
+    <script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+    <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --accent: #f093fb;
+            --bg-light: #f8fafc;
+            --bg-dark: #0f172a;
+            --card-light: #ffffff;
+            --card-dark: #1e293b;
+            --text-light: #1e293b;
+            --text-dark: #e2e8f0;
+            --border-light: #e2e8f0;
+            --border-dark: #334155;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', 'Segoe UI', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        body.light {
+            background: var(--bg-light);
+            color: var(--text-light);
+        }
+        
+        body.dark {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+        
+        /* Dark mode specific styles */
+        body.dark .card {
+            background: var(--card-dark) !important;
+            border: 1px solid var(--border-dark);
+        }
+        
+        body.dark .card-light {
+            background: var(--card-dark) !important;
+            border: 1px solid var(--border-dark);
+        }
+        
+        body.dark .text-gray-500,
+        body.dark .text-gray-600,
+        body.dark .opacity-60 {
+            color: #94a3b8 !important;
+        }
+        
+        body.dark .bg-gray-50,
+        body.dark .bg-gray-100 {
+            background-color: #334155 !important;
+        }
+        
+        body.dark input,
+        body.dark select {
+            background-color: #334155 !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+        
+        body.dark .border {
+            border-color: #334155 !important;
+        }
+        
+        body.dark .nav-tab:not(.active) {
+            color: #94a3b8 !important;
+        }
+        
+        body.dark .nav-tab:not(.active):hover {
+            background: rgba(102, 126, 234, 0.2) !important;
+        }
+        
+        body.dark .badge-branch {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+        }
+        
+        body.dark .progress-bar {
+            background: #334155 !important;
+        }
+        
+        body.dark .header {
+            background: var(--card-dark) !important;
+            border-bottom: 1px solid var(--border-dark);
+        }
+        
+        body.dark footer {
+            color: #64748b !important;
+        }
+        
+        body.dark .fa-sync-alt,
+        body.dark .fa-sun,
+        body.dark .fa-moon {
+            color: #94a3b8 !important;
+        }
+        
+        body.dark .fa-sync-alt:hover,
+        body.dark .fa-sun:hover,
+        body.dark .fa-moon:hover {
+            color: #e2e8f0 !important;
+            background: rgba(102, 126, 234, 0.2) !important;
+        }
+        
+        /* Timeline dark mode */
+        body.dark .vis-timeline {
+            background: var(--card-dark) !important;
+            border: 1px solid var(--border-dark) !important;
+        }
+        
+        body.dark .vis-time-axis .vis-text {
+            color: #94a3b8 !important;
+        }
+        
+        body.dark .vis-grid.vis-vertical {
+            border-left: 1px solid #334155 !important;
+        }
+        
+        body.dark .vis-label {
+            color: #e2e8f0 !important;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+        
+        .card {
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .card-light {
+            background: var(--card-light);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-dark {
+            background: var(--card-dark);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+        }
+        
+        body.dark .card-dark:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .nav-tab:not(.active):hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            transition: width 0.5s ease;
+        }
+        
+        /* D3 Graph Styles */
+        .node {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .node:hover {
+            filter: brightness(1.2);
+        }
+        
+        .link {
+            stroke: #94a3b8;
+            stroke-opacity: 0.6;
+            stroke-width: 2;
+        }
+        
+        .node-label {
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+        }
+        
+        /* Timeline Styles */
+        .vis-timeline {
+            border: none !important;
+            font-family: 'Noto Sans SC', sans-serif !important;
+        }
+        
+        .vis-item {
+            border-color: var(--primary) !important;
+            background-color: var(--primary) !important;
+            color: white !important;
+            border-radius: 4px !important;
+        }
+        
+        .vis-item.vis-selected {
+            background-color: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+        }
+        
+        .vis-time-axis .vis-text {
+            color: #64748b !important;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-core {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        
+        .badge-branch {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        
+        .badge-done {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+    </style>
+</head>
+<body class="light">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 card" :class="isDark ? 'card-dark' : 'card-light'">
+            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
+                        <i class="fas fa-book-open text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold gradient-text">{{ project.title }}</h1>
+                        <p class="text-sm opacity-60">{{ project.genre }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button @click="refreshData" class="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="刷新数据">
+                        <i class="fas fa-sync-alt" :class="{ 'animate-spin': loading }"></i>
+                    </button>
+                    <button @click="toggleTheme" class="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="切换主题">
+                        <i :class="isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
+                    </button>
+                    <button @click="exportPDF" class="px-4 py-2 gradient-bg text-white rounded-lg hover:opacity-90 transition" title="导出PDF">
+                        <i class="fas fa-download mr-2"></i>导出
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="card card-light p-5 fade-in" style="animation-delay: 0.1s">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-600 dark:text-green-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm opacity-60">已完成</p>
+                            <p class="text-2xl font-bold">{{ progress.currentChapter }} 章</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-light p-5 fade-in" style="animation-delay: 0.2s">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                            <i class="fas fa-pen text-blue-600 dark:text-blue-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm opacity-60">已写字数</p>
+                            <p class="text-2xl font-bold">{{ formatNumber(progress.totalWords) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-light p-5 fade-in" style="animation-delay: 0.3s">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                            <i class="fas fa-percentage text-purple-600 dark:text-purple-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm opacity-60">当前进度</p>
+                            <p class="text-2xl font-bold">{{ progress.percent }}%</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-light p-5 fade-in" style="animation-delay: 0.4s">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                            <i class="fas fa-calendar text-orange-600 dark:text-orange-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm opacity-60">预计完本</p>
+                            <p class="text-2xl font-bold">{{ progress.estimatedDays }} 天</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex gap-2 overflow-x-auto pb-4">
+                <div v-for="tab in tabs" :key="tab.id" 
+                     @click="activeTab = tab.id"
+                     class="nav-tab whitespace-nowrap"
+                     :class="{ active: activeTab === tab.id }">
+                    <i :class="tab.icon" class="mr-2"></i>{{ tab.name }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <!-- 卷结构 -->
+            <div v-show="activeTab === 'volume'" class="space-y-4 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold"><i class="fas fa-layer-group mr-2 text-purple-500"></i>卷结构</h2>
+                </div>
+                <div v-for="vol in volumes" :key="vol.id" 
+                     class="card card-light p-5 cursor-pointer hover:shadow-lg"
+                     @click="selectVolume(vol)">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="text-lg font-bold">第{{ vol.id }}卷 {{ vol.name }}</h3>
+                            <p class="text-sm opacity-60">{{ vol.range }} · {{ vol.conflict }}</p>
+                        </div>
+                        <span class="badge" :class="vol.status === 'completed' ? 'badge-done' : 'badge-branch'">
+                            {{ vol.statusText }}
+                        </span>
+                    </div>
+                    <div class="progress-bar mb-2">
+                        <div class="progress-fill" :style="{ width: vol.percent + '%' }"></div>
+                    </div>
+                    <div class="flex justify-between text-sm opacity-60">
+                        <span>已写: {{ vol.written }}章</span>
+                        <span>余: {{ vol.remaining }}章</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 角色状态 -->
+            <div v-show="activeTab === 'protagonist'" class="space-y-4 fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-users mr-2 text-blue-500"></i>角色状态</h2>
+                
+                <!-- 角色卡片列表 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 主角 -->
+                    <div class="card card-light p-5 border-2 border-blue-500 relative">
+                        <div class="absolute -top-3 left-4 px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
+                            主角
+                        </div>
+                        <div class="flex items-start gap-4 mt-2">
+                            <div class="w-16 h-16 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-2xl font-bold">{{ protagonist.name[0] }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-xl font-bold mb-2">{{ protagonist.name }}</h3>
+                                <div class="grid grid-cols-2 gap-2 mb-2">
+                                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                        <p class="text-xs opacity-60">境界</p>
+                                        <p class="font-bold text-purple-600 text-sm">{{ protagonist.realm }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                        <p class="text-xs opacity-60">位置</p>
+                                        <p class="font-bold text-sm">{{ protagonist.location }}</p>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-orange-600 truncate">{{ protagonist.goldenFinger }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 女主 -->
+                    <div class="card card-light p-5 border-2 border-pink-500 relative">
+                        <div class="absolute -top-3 left-4 px-3 py-1 bg-pink-500 text-white text-xs font-bold rounded-full">
+                            女主
+                        </div>
+                        <div class="flex items-start gap-4 mt-2">
+                            <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-2xl font-bold">{{ heroine.name[0] }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-xl font-bold mb-2">{{ heroine.name }}</h3>
+                                <div class="grid grid-cols-2 gap-2 mb-2">
+                                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                        <p class="text-xs opacity-60">身份</p>
+                                        <p class="font-bold text-sm">{{ heroine.role }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                        <p class="text-xs opacity-60">好感度</p>
+                                        <p class="font-bold text-sm text-pink-600">{{ heroine.affection }}%</p>
+                                    </div>
+                                </div>
+                                <p class="text-xs opacity-60 truncate">首次出场: 第{{ heroine.firstChapter }}章</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 其他角色 -->
+                <div v-if="otherCharacters.length > 0">
+                    <h3 class="text-lg font-bold mb-3"><i class="fas fa-user-friends mr-2 text-green-500"></i>其他角色</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div v-for="char in otherCharacters" :key="char.name"
+                             class="card card-light p-3 border border-green-200 dark:border-green-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-user text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-sm truncate">{{ char.name }}</h4>
+                                    <p class="text-xs opacity-60 truncate">{{ char.role }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 场景地点 -->
+                <div v-if="locations.length > 0">
+                    <h3 class="text-lg font-bold mb-3 mt-4"><i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>场景地点</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div v-for="loc in locations" :key="loc.name"
+                             class="card card-light p-3 border border-blue-200 dark:border-blue-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-building text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-sm truncate">{{ loc.name }}</h4>
+                                    <p class="text-xs opacity-60 truncate">{{ loc.role }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 重要物品 -->
+                <div v-if="items.length > 0">
+                    <h3 class="text-lg font-bold mb-3 mt-4"><i class="fas fa-gem mr-2 text-orange-500"></i>重要物品</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div v-for="item in items" :key="item.name"
+                             class="card card-light p-3 border border-orange-200 dark:border-orange-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-ring text-orange-600 dark:text-orange-400"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-sm truncate">{{ item.name }}</h4>
+                                    <p class="text-xs opacity-60 truncate">{{ item.role }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 力量体系 -->
+                <div class="card card-light p-6">
+                    <h3 class="text-lg font-bold mb-4"><i class="fas fa-bolt mr-2 text-yellow-500"></i>力量体系</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <div v-for="(realm, index) in powerSystem" :key="index"
+                             class="px-4 py-2 rounded-full text-sm font-medium transition"
+                             :class="index <= currentRealmIndex ? 'gradient-bg text-white' : 'bg-gray-100 dark:bg-gray-700 opacity-50'">
+                            {{ realm }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 伏笔追踪 -->
+            <div v-show="activeTab === 'foreshadow'" class="space-y-4 fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold"><i class="fas fa-gem mr-2 text-amber-500"></i>伏笔追踪 ({{ foreshadowing.length }})</h2>
+                    <select v-model="foreshadowFilter" class="px-3 py-2 rounded-lg border dark:bg-gray-700">
+                        <option value="all">全部</option>
+                        <option value="core">核心伏笔</option>
+                        <option value="branch">支线伏笔</option>
+                        <option value="undone">未回收</option>
+                        <option value="done">已回收</option>
+                    </select>
+                </div>
+                <div class="space-y-3">
+                    <div v-for="item in filteredForeshadowing" :key="item.content" 
+                         class="card card-light p-4 flex items-center gap-4">
+                        <div class="w-3 h-3 rounded-full"
+                             :class="item.tier === '核心' ? 'bg-amber-500' : 'bg-blue-500'"></div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">{{ item.content }}</span>
+                                <span class="badge text-xs" :class="item.tier === '核心' ? 'badge-core' : 'badge-branch'">
+                                    {{ item.tier }}
+                                </span>
+                            </div>
+                            <p class="text-sm opacity-60">
+                                埋设: 第{{ item.planted }}章 → 回收: 第{{ item.target }}章
+                            </p>
+                        </div>
+                        <span class="badge" :class="item.status === '已回收' ? 'badge-done' : 'badge-branch'">
+                            {{ item.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 审查报告 -->
+            <div v-show="activeTab === 'review'" class="space-y-4 fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-clipboard-check mr-2 text-green-500"></i>审查报告</h2>
+                
+                <!-- 审查统计 -->
+                <div v-if="reviewStats" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-green-600">{{ reviewStats.count }}</p>
+                        <p class="text-sm opacity-60">审查次数</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold">{{ reviewStats.totalReviewedChapters }}</p>
+                        <p class="text-sm opacity-60">审查章节数</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-600">{{ reviewStats.avg }}</p>
+                        <p class="text-sm opacity-60">平均分</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-green-500">{{ reviewStats.max }}</p>
+                        <p class="text-sm opacity-60">最高分</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-red-500">{{ reviewStats.min }}</p>
+                        <p class="text-sm opacity-60">最低分</p>
+                    </div>
+                </div>
+                
+                <!-- 审查记录列表 -->
+                <div class="space-y-3">
+                    <div v-for="(review, index) in reviewData" :key="index" 
+                         class="card card-light p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <h3 class="font-bold">第{{ review.chapters }}章</h3>
+                                <p class="text-sm opacity-60">{{ review.reviewed_at }}</p>
+                            </div>
+                            <div v-if="review.overall_score" class="text-right">
+                                <span class="text-2xl font-bold" 
+                                      :class="review.overall_score >= 80 ? 'text-green-600' : (review.overall_score >= 60 ? 'text-yellow-600' : 'text-red-600')">
+                                    {{ review.overall_score }}
+                                </span>
+                                <p class="text-xs opacity-60">综合评分</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 维度分数 -->
+                        <div v-if="review.dimension_scores && Object.keys(review.dimension_scores).length > 0" class="mb-3">
+                            <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+                                <div v-for="(score, dim) in review.dimension_scores" :key="dim" class="text-center">
+                                    <div class="text-lg font-bold" :class="score >= 8 ? 'text-green-600' : (score >= 5 ? 'text-yellow-600' : 'text-red-600')">
+                                        {{ score }}
+                                    </div>
+                                    <div class="text-xs opacity-60">{{ dim }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 严重问题 -->
+                        <div v-if="review.critical_issues && review.critical_issues.length > 0" class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <p class="text-sm font-bold text-red-600 mb-2">严重问题:</p>
+                            <ul class="list-disc list-inside text-sm text-red-600">
+                                <li v-for="(issue, i) in review.critical_issues" :key="i">{{ issue }}</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 问题统计 -->
+                        <div v-if="review.severity_counts && Object.keys(review.severity_counts).length > 0" class="mt-3 flex gap-3 text-xs">
+                            <span v-if="review.severity_counts.critical" class="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-600 rounded">严重: {{ review.severity_counts.critical }}</span>
+                            <span v-if="review.severity_counts.high" class="px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-600 rounded">高: {{ review.severity_counts.high }}</span>
+                            <span v-if="review.severity_counts.medium" class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-600 rounded">中: {{ review.severity_counts.medium }}</span>
+                            <span v-if="review.severity_counts.low" class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 rounded">低: {{ review.severity_counts.low }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="reviewData.length === 0" class="card card-light p-8 text-center">
+                    <p class="text-gray-500">暂无审查数据</p>
+                    <p class="text-sm opacity-60">运行 webnovel-review 生成审查报告</p>
+                </div>
+            </div>
+
+            <!-- 角色关系图谱 -->
+            <div v-show="activeTab === 'relationship'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-project-diagram mr-2 text-pink-500"></i>角色关系图谱</h2>
+                <div class="card card-light p-4" style="height: 600px;">
+                    <div id="relationship-graph" class="w-full h-full"></div>
+                </div>
+            </div>
+
+            <!-- 故事时间线 -->
+            <div v-show="activeTab === 'timeline'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-clock mr-2 text-indigo-500"></i>故事时间线</h2>
+                <div class="card card-light p-4">
+                    <div id="timeline" class="w-full" style="height: 400px;"></div>
+                </div>
+            </div>
+
+            <!-- 势力版图 -->
+            <div v-show="activeTab === 'factions'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-map-marked-alt mr-2 text-red-500"></i>势力版图</h2>
+                <div class="card card-light p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="faction in factions" :key="faction.name"
+                             class="border-2 rounded-xl p-4 transition hover:shadow-lg"
+                             :class="getFactionBorderColor(faction.type)">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                                     :class="getFactionBgColor(faction.type)">
+                                    <i :class="getFactionIcon(faction.type)" class="text-white"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">{{ faction.name }}</h4>
+                                    <p class="text-xs opacity-60">{{ faction.type }}</p>
+                                </div>
+                            </div>
+                            <p class="text-sm opacity-80">{{ faction.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 opacity-60 text-sm">
+            <p>小说架构看板 · 自动生成 · 最后更新: {{ lastUpdated }}</p>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+        createApp({
+            setup() {
+                const isDark = ref(false);
+                const loading = ref(false);
+                const activeTab = ref('volume');
+                const foreshadowFilter = ref('all');
+                
+                const tabs = [
+                    { id: 'volume', name: '卷结构', icon: 'fas fa-layer-group' },
+                    { id: 'protagonist', name: '角色状态', icon: 'fas fa-users' },
+                    { id: 'foreshadow', name: '伏笔追踪', icon: 'fas fa-gem' },
+                    { id: 'review', name: '审查报告', icon: 'fas fa-clipboard-check' },
+                    { id: 'relationship', name: '角色图谱', icon: 'fas fa-project-diagram' },
+                    { id: 'timeline', name: '时间线', icon: 'fas fa-clock' },
+                    { id: 'factions', name: '势力版图', icon: 'fas fa-map-marked-alt' },
+                ];
+
+                const project = ref({
+                    title: '末世降临：我在地摊买了本成神指南',
+                    genre: '末世+异能',
+                    targetWords: 1000000
+                });
+
+                const progress = ref({
+                    currentChapter: 31,
+                    totalWords: 74528,
+                    percent: 7,
+                    estimatedDays: 90
+                });
+
+                const protagonist = ref({
+                    name: '陈默',
+                    realm: '感气中期',
+                    layer: 1,
+                    location: '防空洞',
+                    goldenFinger: '《洞天要术》Lv.1',
+                    flaw: '过度谨慎导致的"冷眼旁观"',
+                    nextGoal: '达到引气境以应对守渊者威胁'
+                });
+                
+                const heroine = ref({
+                    name: '苏雨',
+                    role: '医学生',
+                    affection: 30,
+                    firstChapter: 11
+                });
+                
+                const otherCharacters = ref([]);
+                const locations = ref([]);
+                const items = ref([]);
+                
+                const powerSystem = ref([
+                    '感气', '引气', '筑基', '开光', '融合', '辟谷', '金丹', '元婴', '化神'
+                ]);
+
+                const currentRealmIndex = computed(() => {
+                    return powerSystem.value.indexOf(protagonist.value.realm.replace('期', ''));
+                });
+
+                const volumes = ref([
+                    { id: 1, name: '冰河序章', range: '第1-50章', conflict: '末世降临，主角获得古书', status: 'writing', percent: 62, written: 31, remaining: 19 },
+                    { id: 2, name: '觉醒者时代', range: '第51-150章', conflict: '觉醒者势力崛起', status: 'planned', percent: 0, written: 0, remaining: 100 },
+                    { id: 3, name: '资源博弈', range: '第151-250章', conflict: '资源争夺战', status: 'planned', percent: 0, written: 0, remaining: 100 },
+                    { id: 4, name: '古法复兴', range: '第251-350章', conflict: '古法修炼的秘密', status: 'planned', percent: 0, written: 0, remaining: 100 },
+                    { id: 5, name: '万灵归墟', range: '第351-450章', conflict: '天劫降临', status: 'planned', percent: 0, written: 0, remaining: 100 },
+                ]);
+
+                const volumesComputed = computed(() => {
+                    return volumes.value.map(vol => {
+                        let status = vol.percent > 0 ? 'writing' : 'planned';
+                        let statusText = vol.percent >= 100 ? '已完成' : (vol.percent > 0 ? '进行中' : '计划中');
+                        return { ...vol, status, statusText };
+                    });
+                });
+
+                const foreshadowing = ref([
+                    { content: '古书《洞天要术》的来历', planted: 1, target: 101, tier: '核心', status: '未回收' },
+                    { content: '临渊市地下埋藏的上古遗迹', planted: 3, target: 20, tier: '核心', status: '未回收' },
+                    { content: '上一个文明覆灭的真相', planted: 1, target: 300, tier: '核心', status: '未回收' },
+                    { content: '女主苏雨的特殊体质', planted: 1, target: 101, tier: '支线', status: '未回收' },
+                    { content: '临渊塔的传说', planted: 1, target: 101, tier: '支线', status: '未回收' },
+                    { content: '预知能力的代价（人性磨损）', planted: 1, target: 101, tier: '核心', status: '未回收' },
+                    { content: '《洞天要术》书灵的身份与过往', planted: 3, target: 50, tier: '支线', status: '未回收' },
+                    { content: '临渊塔与遗迹的关联', planted: 3, target: 30, tier: '支线', status: '未回收' },
+                ]);
+                
+                const timelineData = ref([]);
+                const chapterMeta = ref({});
+                
+                // 审查数据
+                const reviewData = ref([]);
+                const reviewStats = computed(() => {
+                    if (reviewData.value.length === 0) return null;
+                    const scores = reviewData.value.filter(r => r.overall_score).map(r => r.overall_score);
+                    if (scores.length === 0) return null;
+                    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                    const min = Math.min(...scores);
+                    const max = Math.max(...scores);
+                    return {
+                        count: scores.length,
+                        avg: avg.toFixed(1),
+                        min,
+                        max,
+                        totalReviewedChapters: reviewData.value.reduce((acc, r) => {
+                            const match = r.chapters.match(/(\d+)/g);
+                            return acc + (match ? match.length : 0);
+                        }, 0)
+                    };
+                });
+                
+                const filteredForeshadowing = computed(() => {
+                    if (foreshadowFilter.value === 'all') return foreshadowing.value;
+                    if (foreshadowFilter.value === 'core') return foreshadowing.value.filter(f => f.tier === '核心');
+                    if (foreshadowFilter.value === 'branch') return foreshadowing.value.filter(f => f.tier === '支线');
+                    if (foreshadowFilter.value === 'undone') return foreshadowing.value.filter(f => f.status === '未回收');
+                    if (foreshadowFilter.value === 'done') return foreshadowing.value.filter(f => f.status === '已回收');
+                    return foreshadowing.value;
+                });
+
+                const factions = ref([
+                    { name: '主角一行', type: '主角', description: '陈默与苏雨的末世求生队伍' },
+                    { name: '幸存者联盟', type: '势力', description: '临渊市的幸存者组织' },
+                    { name: '武装势力', type: '反派', description: '末世中的武装掠夺者' },
+                    { name: '科技残党', type: '势力', description: '保留现代科技的残余势力' },
+                    { name: '猎食者·鬼影', type: '反派', description: '猎杀觉醒者吸收晶核的独行强者' },
+                    { name: '古书传承者', type: '隐藏', description: '其他获得古书传承的人' },
+                ]);
+
+                const lastUpdated = ref(new Date().toLocaleString('zh-CN'));
+
+                // Methods
+                const toggleTheme = () => {
+                    isDark.value = !isDark.value;
+                    document.body.classList.toggle('dark', isDark.value);
+                    document.body.classList.toggle('light', !isDark.value);
+                    try {
+                        localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
+                    } catch (e) {
+                        // 忽略存储错误
+                    }
+                };
+
+                // 自动检测数据路径
+                const detectDataPath = async () => {
+                    // 可能的路径列表
+                    const paths = [
+                        './config.js',
+                        '../config.js',
+                        '../../config.js',
+                        '../../../config.js',
+                    ];
+                    
+                    // 先检查配置文件
+                    for (const path of paths) {
+                        try {
+                            const resp = await fetch(path, { method: 'HEAD' });
+                            if (resp.ok) {
+                                // 动态加载配置
+                                const script = document.createElement('script');
+                                script.src = path;
+                                document.head.appendChild(script);
+                                await new Promise((resolve, reject) => {
+                                    script.onload = resolve;
+                                    script.onerror = reject;
+                                    setTimeout(reject, 1000);
+                                });
+                                
+                                if (window.DASHBOARD_CONFIG && window.DASHBOARD_CONFIG.stateJsonPath) {
+                                    return window.DASHBOARD_CONFIG.stateJsonPath;
+                                }
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    
+                    // 尝试常见的 data.json/state.json 路径
+                    const dataPaths = [
+                        './.webnovel/state.json',
+                        '../.webnovel/state.json',
+                        '../../.webnovel/state.json',
+                        '../../../.webnovel/state.json',
+                        '../../../../.webnovel/state.json',
+                        './data.json',
+                        '../data.json',
+                        './novel.txt',
+                    ];
+                    
+                    for (const path of dataPaths) {
+                        try {
+                            const resp = await fetch(path, { method: 'HEAD' });
+                            if (resp.ok) {
+                                return path;
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    
+                    return null;
+                };
+                
+                const refreshData = async () => {
+                    loading.value = true;
+                    
+                    // 自动检测数据路径
+                    const dataPath = await detectDataPath();
+                    
+                    if (!dataPath) {
+                        console.warn('无法找到数据文件，请确保在正确的项目目录下运行');
+                        loading.value = false;
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(dataPath);
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        const data = await response.json();
+                        
+                        project.value = {
+                            title: data.project.title,
+                            genre: data.project.genre,
+                            targetWords: data.project.target_words
+                        };
+                        
+                        progress.value = {
+                            currentChapter: data.progress.current_chapter,
+                            totalWords: data.progress.total_words,
+                            percent: Math.round((data.progress.current_chapter / 450) * 100),
+                            estimatedDays: Math.round((450 - data.progress.current_chapter) * 0.5)
+                        };
+                        
+                        protagonist.value = {
+                            name: data.protagonist_state.name,
+                            realm: data.protagonist_state.power.realm,
+                            layer: data.protagonist_state.power.layer,
+                            location: data.protagonist_state.location.current,
+                            goldenFinger: data.protagonist_state.golden_finger.name + ' Lv.' + data.protagonist_state.golden_finger.level,
+                            flaw: '过度谨慎导致的"冷眼旁观"',
+                            nextGoal: data.protagonist_state.power.bottleneck
+                        };
+                        
+                        // 读取女主信息
+                        if (data.relationships) {
+                            const heroineData = data.relationships['苏雨'];
+                            if (heroineData) {
+                                heroine.value = {
+                                    name: '苏雨',
+                                    role: heroineData.role || '医学生',
+                                    affection: heroineData.affection || 30,
+                                    firstChapter: heroineData.first_appearance ? parseInt(heroineData.first_appearance.replace('第', '').replace('章', '')) : 11
+                                };
+                            }
+                            
+                            // 读取其他实体，按类型分类
+                            const chars = [];
+                            const locs = [];
+                            const itms = [];
+                            
+                            for (const [name, info] of Object.entries(data.relationships)) {
+                                if (name === '陈默' || name === '苏雨') continue;
+                                
+                                const type = info.type || '';
+                                const roleText = info.role || info.description || '';
+                                
+                                // 根据 type 分类
+                                if (type.includes('城市') || type.includes('地点') || type.includes('建筑') || type.includes('场景')) {
+                                    locs.push({
+                                        name: name,
+                                        role: type,
+                                        description: info.description || ''
+                                    });
+                                } else if (type.includes('物品') || type.includes('武器') || type.includes('道具') || type.includes('金手指')) {
+                                    itms.push({
+                                        name: name,
+                                        role: type,
+                                        description: info.description || ''
+                                    });
+                                } else if (roleText && !type.includes('场景')) {
+                                    chars.push({
+                                        name: name,
+                                        role: roleText || type || '角色'
+                                    });
+                                }
+                            }
+                            
+                            otherCharacters.value = chars;
+                            locations.value = locs;
+                            items.value = itms;
+                        }
+
+                        if (data.plot_threads && data.plot_threads.foreshadowing) {
+                            foreshadowing.value = data.plot_threads.foreshadowing.map(f => ({
+                                content: f.content,
+                                planted: f.planted_chapter,
+                                target: f.target_chapter,
+                                tier: f.tier === '核心' ? '核心' : '支线',
+                                status: f.status
+                            }));
+                        }
+                        
+                        // 提取时间线数据
+                        chapterMeta.value = data.chapter_meta || {};
+                        const timelineItems = [];
+                        const baseDate = new Date('2024-06-01'); // 假设末世前60天是2024年6月1日
+                        
+                        for (const [chNum, chData] of Object.entries(data.chapter_meta || {})) {
+                            const chapter = parseInt(chNum);
+                            if (chapter > 50) break; // 只显示第1-50章
+                            
+                            // 从 countdown 解析天数
+                            let dayOffset = 0;
+                            const countdown = chData.countdown || '';
+                            const match = countdown.match(/D(-?\d+)/);
+                            if (match) {
+                                dayOffset = parseInt(match[1]);
+                            } else if (countdown.includes('无') || countdown === '') {
+                                // 末世后，默认 D+5 开始
+                                dayOffset = 5 + (chapter - 29) * 3;
+                            }
+                            
+                            // 计算日期
+                            const eventDate = new Date(baseDate);
+                            eventDate.setDate(baseDate.getDate() + dayOffset + 60); // D-60 开始
+                            
+                            timelineItems.push({
+                                id: chapter,
+                                content: chData.title || `第${chapter}章`,
+                                start: eventDate,
+                                chapter: chapter,
+                                timeAnchor: chData.time_anchor || '',
+                                satisfaction: chData.satisfaction || ''
+                            });
+                        }
+                        
+                        // 按章节排序
+                        timelineItems.sort((a, b) => a.chapter - b.chapter);
+                        timelineData.value = timelineItems;
+                        
+                        // 加载审查数据
+                        if (data.review_checkpoints) {
+                            reviewData.value = data.review_checkpoints.map(r => ({
+                                chapters: r.chapters,
+                                overall_score: r.overall_score || null,
+                                dimension_scores: r.dimension_scores || {},
+                                severity_counts: r.severity_counts || {},
+                                critical_issues: r.critical_issues || [],
+                                reviewed_at: r.reviewed_at
+                            }));
+                        }
+
+                        lastUpdated.value = new Date().toLocaleString('zh-CN', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch (e) {
+                        console.warn('无法从服务器加载数据，将使用本地缓存数据:', e.message);
+                        // 保持使用默认值，不显示错误
+                    }
+                    loading.value = false;
+                };
+
+                const formatNumber = (num) => {
+                    return new Intl.NumberFormat('zh-CN').format(num);
+                };
+
+                const selectVolume = (vol) => {
+                    console.log('Selected volume:', vol);
+                };
+
+                const exportPDF = () => {
+                    alert('导出功能开发中...');
+                };
+
+                const getFactionBorderColor = (type) => {
+                    const colors = {
+                        '主角': 'border-green-500',
+                        '势力': 'border-blue-500',
+                        '反派': 'border-red-500',
+                        '隐藏': 'border-purple-500'
+                    };
+                    return colors[type] || 'border-gray-500';
+                };
+
+                const getFactionBgColor = (type) => {
+                    const colors = {
+                        '主角': 'bg-green-500',
+                        '势力': 'bg-blue-500',
+                        '反派': 'bg-red-500',
+                        '隐藏': 'bg-purple-500'
+                    };
+                    return colors[type] || 'bg-gray-500';
+                };
+
+                const getFactionIcon = (type) => {
+                    const icons = {
+                        '主角': 'fas fa-user',
+                        '势力': 'fas fa-users',
+                        '反派': 'fas fa-skull',
+                        '隐藏': 'fas fa-mask'
+                    };
+                    return icons[type] || 'fas fa-question';
+                };
+
+                // Initialize D3 Graph
+                const initRelationshipGraph = () => {
+                    const container = document.getElementById('relationship-graph');
+                    if (!container) return;
+                    
+                    // 等待 DOM 渲染完成
+                    const parent = container.parentElement;
+                    if (!parent) return;
+                    
+                    // 确保容器有有效尺寸
+                    const rawWidth = parent.clientWidth;
+                    const rawHeight = parent.clientHeight;
+                    const width = Math.max(rawWidth - 32, 400); // 最小宽度400
+                    const height = Math.max(rawHeight - 32, 300); // 最小高度300
+                    
+                    const nodes = [
+                        { id: '陈默', group: 1, radius: 35 },
+                        { id: '苏雨', group: 2, radius: 25 },
+                        { id: '《洞天要术》', group: 3, radius: 25 },
+                        { id: '临渊塔', group: 3, radius: 20 },
+                        { id: '防空洞', group: 3, radius: 15 },
+                        { id: '上古遗迹', group: 3, radius: 20 },
+                        { id: '守渊者', group: 4, radius: 20 },
+                    ];
+                    
+                    const links = [
+                        { source: '陈默', target: '苏雨', type: 'love' },
+                        { source: '陈默', target: '《洞天要术》', type: 'own' },
+                        { source: '陈默', target: '临渊塔', type: 'location' },
+                        { source: '陈默', target: '防空洞', type: 'location' },
+                        { source: '临渊塔', target: '上古遗迹', type: 'contain' },
+                        { source: '《洞天要术》', target: '守渊者', type: 'enemy' },
+                    ];
+
+                    container.innerHTML = '';
+                    
+                    const svg = d3.select(container)
+                        .append('svg')
+                        .attr('width', width)
+                        .attr('height', height);
+
+                    const simulation = d3.forceSimulation(nodes)
+                        .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+                        .force('charge', d3.forceManyBody().strength(-300))
+                        .force('center', d3.forceCenter(width / 2, height / 2))
+                        .force('collision', d3.forceCollide().radius(d => d.radius + 10));
+
+                    const link = svg.append('g')
+                        .selectAll('line')
+                        .data(links)
+                        .enter().append('line')
+                        .attr('class', 'link')
+                        .attr('stroke', d => d.type === 'love' ? '#f43f5e' : '#94a3b8')
+                        .attr('stroke-width', d => d.type === 'love' ? 3 : 2)
+                        .attr('stroke-dasharray', d => d.type === 'enemy' ? '5,5' : 'none');
+
+                    const node = svg.append('g')
+                        .selectAll('g')
+                        .data(nodes)
+                        .enter().append('g')
+                        .attr('class', 'node')
+                        .call(d3.drag()
+                            .on('start', dragstarted)
+                            .on('drag', dragged)
+                            .on('end', dragended));
+
+                    node.append('circle')
+                        .attr('r', d => d.radius)
+                        .attr('fill', d => {
+                            const colors = ['#667eea', '#f43f5e', '#10b981', '#f59e0b'];
+                            return colors[d.group - 1] || '#94a3b8';
+                        })
+                        .attr('stroke', '#fff')
+                        .attr('stroke-width', 2);
+
+                    node.append('text')
+                        .attr('class', 'node-label')
+                        .attr('text-anchor', 'middle')
+                        .attr('dy', d => d.radius + 15)
+                        .attr('fill', isDark.value ? '#e2e8f0' : '#1e293b')
+                        .text(d => d.id);
+
+                    simulation.on('tick', () => {
+                        link
+                            .attr('x1', d => d.source.x)
+                            .attr('y1', d => d.source.y)
+                            .attr('x2', d => d.target.x)
+                            .attr('y2', d => d.target.y);
+
+                        node.attr('transform', d => `translate(${d.x},${d.y})`);
+                    });
+
+                    function dragstarted(event, d) {
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y;
+                    }
+
+                    function dragged(event, d) {
+                        d.fx = event.x;
+                        d.fy = event.y;
+                    }
+
+                    function dragended(event, d) {
+                        if (!event.active) simulation.alphaTarget(0);
+                        d.fx = null;
+                        d.fy = null;
+                    }
+                };
+
+                // Initialize Timeline
+                const initTimeline = () => {
+                    const container = document.getElementById('timeline');
+                    if (!container) return;
+                    
+                    // 清除已有内容
+                    container.innerHTML = '';
+
+                    // 使用已加载的时间线数据，或从 chapterMeta 重新构建
+                    let timelineItems = timelineData.value;
+                    
+                    // 如果没有预加载数据，从 chapterMeta 构建
+                    if (timelineItems.length === 0 && Object.keys(chapterMeta.value).length > 0) {
+                        const baseDate = new Date('2024-01-01');
+                        const chapters = chapterMeta.value;
+                        
+                        for (const [chNum, chData] of Object.entries(chapters)) {
+                            const chapter = parseInt(chNum);
+                            if (chapter > 31) break;
+                            
+                            const countdown = chData.countdown || '';
+                            let dayOffset = 0;
+                            
+                            const match = countdown.match(/D(-?\d+)/);
+                            if (match) {
+                                dayOffset = parseInt(match[1]);
+                                const eventDate = new Date(baseDate);
+                                eventDate.setDate(baseDate.getDate() + dayOffset + 60);
+                                
+                                timelineItems.push({
+                                    id: chapter,
+                                    content: chData.title || `第${chapter}章`,
+                                    start: eventDate,
+                                    chapter: chapter,
+                                    timeAnchor: chData.time_anchor || countdown,
+                                    satisfaction: chData.satisfaction || ''
+                                });
+                            }
+                        }
+                        timelineItems.sort((a, b) => a.chapter - b.chapter);
+                    }
+
+                    // 如果没有数据，使用默认
+                    const items = new vis.DataSet(timelineItems.length > 0 ? timelineItems : [
+                        { id: 1, content: '第1章 地摊买书', start: new Date('2024-01-01'), timeAnchor: 'D-60 → D-59' },
+                        { id: 2, content: '第2章 修炼与准备', start: new Date('2024-01-02'), timeAnchor: 'D-59 → D-58' },
+                        { id: 3, content: '第3章 滴血认主', start: new Date('2024-01-03'), timeAnchor: 'D-58' },
+                        { id: 29, content: '第29章 感气中期', start: new Date('2024-01-30'), timeAnchor: '末世第5天' },
+                        { id: 30, content: '第30章 遗迹入口', start: new Date('2024-01-31'), timeAnchor: '末世第6天' },
+                        { id: 31, content: '第31章 探索古书', start: new Date('2024-02-01'), timeAnchor: '末世第6天傍晚至第7天早上' },
+                    ]);
+
+                    // 计算时间范围
+                    let minDate = new Date('2024-01-01');
+                    let maxDate = new Date('2024-02-10');
+                    
+                    if (items.length > 0) {
+                        const dates = items.get().map(item => new Date(item.start));
+                        minDate = new Date(Math.min(...dates));
+                        maxDate = new Date(Math.max(...dates));
+                        minDate.setDate(minDate.getDate() - 2);
+                        maxDate.setDate(maxDate.getDate() + 5);
+                    }
+
+                    // 简化配置 - 使用默认格式，时间信息显示在事件标签中
+                    const options = {
+                        height: '360px',
+                        start: minDate,
+                        end: maxDate,
+                        zoomMin: 1000 * 60 * 60 * 24 * 3,
+                        zoomMax: 1000 * 60 * 60 * 24 * 60,
+                        orientation: 'top',
+                        template: function(item, element, data) {
+                            return `<div class="timeline-item" style="padding: 4px 8px; white-space: nowrap;">
+                                <div class="font-bold text-sm">${data.content}</div>
+                                <div class="text-xs" style="color: #667eea;">${data.timeAnchor}</div>
+                            </div>`;
+                        }
+                    };
+
+                    try {
+                        new vis.Timeline(container, items, options);
+                    } catch (e) {
+                        console.error('Timeline init error:', e);
+                    }
+                };
+
+                onMounted(() => {
+                    let savedTheme = 'light';
+                    try {
+                        savedTheme = localStorage.getItem('theme') || 'light';
+                    } catch (e) {
+                        // 忽略存储错误
+                    }
+                    if (savedTheme === 'dark') {
+                        isDark.value = true;
+                        document.body.classList.add('dark');
+                        document.body.classList.remove('light');
+                    }
+                    
+                    refreshData();
+                    
+                    // 默认初始化当前 tab 的内容
+                    nextTick(() => {
+                        setTimeout(() => {
+                            if (activeTab.value === 'relationship') {
+                                initRelationshipGraph();
+                            }
+                            if (activeTab.value === 'timeline') {
+                                initTimeline();
+                            }
+                        }, 500);
+                    });
+                });
+
+                // 监听 tab 切换
+                watch(activeTab, (newTab) => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            if (newTab === 'relationship') {
+                                initRelationshipGraph();
+                            }
+                            if (newTab === 'timeline') {
+                                initTimeline();
+                            }
+                        }, 300);
+                    });
+                });
+                
+                // 监听主题切换，重新初始化图表
+                watch(isDark, () => {
+                    nextTick(() => {
+                        setTimeout(() => {
+                            initRelationshipGraph();
+                            initTimeline();
+                        }, 100);
+                    });
+                });
+
+                return {
+                    isDark,
+                    loading,
+                    activeTab,
+                    tabs,
+                    project,
+                    progress,
+                    protagonist,
+                    heroine,
+                    otherCharacters,
+                    locations,
+                    items,
+                    powerSystem,
+                    currentRealmIndex,
+                    volumes: volumesComputed,
+                    foreshadowing,
+                    foreshadowFilter,
+                    filteredForeshadowing,
+                    reviewData,
+                    reviewStats,
+                    factions,
+                    lastUpdated,
+                    toggleTheme,
+                    refreshData,
+                    formatNumber,
+                    selectVolume,
+                    exportPDF,
+                    getFactionBorderColor,
+                    getFactionBgColor,
+                    getFactionIcon
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
