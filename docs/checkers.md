@@ -4,13 +4,15 @@
 
 ## 审查器架构
 
-审查器采用配置驱动架构：
+审查器采用配置驱动架构，由两部分组成：
 
 | 组件 | 路径 | 说明 |
 |------|------|------|
-| 注册表 | `.opencode/checkers/registry.yaml` | 审查器配置 |
+| 注册表 | `.opencode/checkers/registry.yaml` | 审查器**配置**，包含列表、分类、触发条件、agent 文件路径 |
+| Agent 文件 | `.opencode/agents/xxx-checker.md` | 审查器**实现**，包含 prompt 模板和输出格式定义 |
 | Schema | `.opencode/checkers/schema.yaml` | 输出格式定义 |
-| Agent 文件 | `.opencode/agents/xxx-checker.md` | 审查器实现 |
+
+> **关键概念**：registry.yaml 的 `file` 字段指定 agent 文件路径（如 `../agents/consistency-checker.md`），代码会根据此路径加载审查器实现。
 
 ## 快速开始
 

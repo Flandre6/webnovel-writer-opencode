@@ -78,3 +78,26 @@
 产出：
 
 - `.webnovel/project_memory.json`
+
+## `/webnovel-export`
+
+用途：将正文导出为 Markdown/TXT/EPUB 格式。
+
+示例：
+
+```
+/webnovel-export
+/webnovel-export --format markdown
+/webnovel-export --range 1-10 --format epub
+/webnovel-export --volume 1 --format txt
+```
+
+参数：
+
+| 参数 | 说明 |
+|------|------|
+| `--format` | 输出格式：markdown（默认）、txt、epub |
+| `--range` | 章节范围，如 `1-10`、`1,3,5` |
+| `--volume` | 导出指定卷 |
+| `--output` | 输出文件路径 |
+| `--author` | 作者名（仅 EPUB 需要） |
