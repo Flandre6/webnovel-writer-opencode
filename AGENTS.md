@@ -26,6 +26,9 @@ pytest --cov --cov-report=term-missing .opencode/scripts/data_modules/tests/
 
 # 只运行失败的测试
 pytest --lf
+
+# Windows: 运行测试脚本
+powershell -File .opencode/scripts/run_tests.ps1
 ```
 
 **测试配置**:
@@ -127,47 +130,17 @@ except ImportError:
 ```
 项目目录/
 ├── .opencode/              # OpenCode 配置
-│   ├── agents/            # Agent 定义（Markdown格式）
-│   │   ├── context-agent.md
-│   │   ├── data-agent.md
-│   │   └── *-checker.md  # 审查器
-│   ├── checkers/         # 审查器配置驱动
-│   │   ├── registry.yaml # 审查器注册表
-│   │   ├── schema.yaml   # 输出 Schema 定义
-│   │   └── templates/    # 审查器模板
-│   ├── skills/           # 7个 Skills
-│   ├── scripts/          # Python 核心
+│   ├── agents/           # 8个 Agent 定义（Markdown格式）
+│   ├── checkers/        # 审查器配置驱动
+│   ├── skills/          # 8个 Skills
+│   ├── scripts/         # Python 核心脚本
 │   │   └── data_modules/ # 核心模块
-│   │       ├── state_manager.py
-│   │       ├── context_manager.py
-│   │       ├── index_manager.py
-│   │       ├── api_client.py
-│   │       ├── checkers_manager.py
-│   │       └── tests/    # 测试文件
-│   ├── references/      # 参考文档
-│   ├── genres/          # 题材参考
-│   └── templates/       # 输出模板
+│   ├── references/     # 参考文档
+│   ├── genres/         # 38+ 题材参考
+│   └── templates/      # 输出模板
 ├── opencode.json        # Agent 配置
 ├── .env                 # API 配置
 └── init.sh / init.bat  # 安装脚本
-```
-项目目录/
-├── .opencode/              # OpenCode 配置
-│   ├── agents/           # 8个 Agent 定义（Markdown格式）
-│   ├── skills/           # 7个 Skills
-│   ├── scripts/           # Python 核心
-│   │   └── data_modules/ # 核心模块
-│   │       ├── state_manager.py
-│   │       ├── context_manager.py
-│   │       ├── index_manager.py
-│   │       ├── api_client.py
-│   │       └── tests/    # 测试文件
-│   ├── references/        # 参考文档
-│   ├── genres/            # 题材参考
-│   └── templates/         # 输出模板
-├── opencode.json          # Agent 配置
-├── .env                   # API 配置
-└── init.sh / init.bat     # 安装脚本
 ```
 
 ## 关键约定
@@ -177,6 +150,7 @@ except ImportError:
 3. **实体追踪**: 所有新实体必须通过 `EntityLinker` 注册
 4. **文件编码**: 所有文件使用 UTF-8
 5. **中文文档**: 所有用户面向的字符串和文档使用中文
+6. **审查器**: 通过 registry.yaml 配置，由 agents/*.md 实现
 
 ## 测试最佳实践
 
@@ -191,3 +165,31 @@ except ImportError:
 - API 配置通过环境变量读取，支持 `.env` 文件
 - `.env` 加载顺序: 当前目录 → 用户全局目录
 - 已有环境变量不会被 `.env` 覆盖（显式优先）
+
+## 常用运维命令
+
+```bash
+# 索引重建
+python .opencode/scripts/webnovel.py index process-chapter --chapter 1
+
+# 索引统计
+python .opencode/scripts/webnovel.py index stats
+
+# 健康报告
+python .opencode/scripts/webnovel.py status --focus all
+
+# 向量重建
+python .opencode/scripts/webnovel.py rag index-chapter --chapter 1
+```
+
+## Git 工作流
+
+```bash
+# 提交前运行测试
+pytest
+
+# 提交信息规范
+git commit -m "type: description"
+
+# type: feat, fix, docs, refactor, test, chore
+```
