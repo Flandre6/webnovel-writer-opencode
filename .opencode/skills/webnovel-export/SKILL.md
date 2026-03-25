@@ -1,202 +1,124 @@
 ---
 name: webnovel-export
-description: 将正文导出为 Markdown/TXT/EPUB 格式。当用户要求导出或发布章节时使用。按步骤执行导出流程，包含预检、导出、验证、workflow 记录。
+description: 将网文正文导出为 Markdown/TXT/EPUB 格式。立即使用此 skill 当用户说：导出、发布小说、导出章节、生成电子书、导出 TXT、导出 Markdown、导出 EPUB、下载小说、输出正文章节。无论用户是否明确说"导出"，只要意图是将章节内容输出为文件，就使用此 skill。包含预检、导出、验证、workflow 记录的完整流程。
 allowed-tools: Read Write Edit Bash Task
 ---
 
-# 正文导出（Structured Workflow）
+# 正文导出
 
-## 目标
-
-将网文正文导出为不同格式，便于发布或存档。流程包含预检、导出执行、输出验证、workflow 记录。
-
-## 支持格式
-
-| 格式 | 说明 | 依赖 |
-|------|------|------|
-| Markdown | Markdown 格式，可用任何编辑器打开 | 无 |
-| TXT | 纯文本，最通用 | 无 |
-| EPUB | 电子书，阅读器可用 | ebooklib |
-
-## 执行原则
-
-1. 先校验项目存在性和章节文件，再执行导出
-2. 导出是只读操作，不需要审查/润色/数据回写
-3. 导出失败时提供明确错误信息，不静默失败
-4. 输出文件路径规范化，默认放在 `导出/` 目录
-
-## 模式定义
-
-- `/webnovel-export`：Step 1 → 2 → 3 → 4（完整流程）
-- `/webnovel-export --list`：仅列出可导出章节（跳过导出）
-- `/webnovel-export --check`：仅验证导出能力，不生成文件
-
-最小产物（所有模式）：
-- 导出文件：`导出/{filename}.{ext}`
-- workflow 任务记录完成
-
-## 环境变量说明
-
-| 变量 | 说明 | 来源 |
-|------|------|------|
-| `CLAUDE_PROJECT_DIR` | OpenCode 当前打开的项目根目录 | OpenCode 自动设置 |
-| `WORKSPACE_ROOT` | 工作区根目录，默认为 CLAUDE_PROJECT_DIR，否则使用当前目录 | 脚本设置 |
-| `PROJECT_ROOT` | 真实书项目根目录（包含 `.webnovel/state.json` 或 `正文/` 目录） | 通过 `preflight`/`where` 命令解析 |
-| `SKILL_ROOT` | skill 所在目录 | 脚本设置 |
-| `SCRIPTS_DIR` | 脚本目录（`.opencode/scripts/`） | 脚本设置 |
-
-## 交互流程
-
-### Step 0：预检与项目解析
-
-必须做：
-- 解析真实书项目根（book project_root）：必须包含 `.webnovel/state.json` 或 `正文/` 目录
-- 校验核心输入：章节文件存在性
-- 获取 `PROJECT_ROOT`（见上方环境变量说明）
-
-环境设置（bash 命令执行前）：
-```bash
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" preflight
-export PROJECT_ROOT="$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
-```
-
-**硬门槛**：`preflight` 必须成功。校验 `SCRIPTS_DIR`、`webnovel.py` 和解析出的 `PROJECT_ROOT`。任一失败都立即阻断。
-
-输出：
-- 项目根目录路径
-- 可导出章节列表
-
-### Step 0.5：工作流断点记录（best-effort，不阻断）
-
-```bash
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow start-task --command webnovel-export || true
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow start-step --step-id "Step 1" --step-name "Collect Export Info" || true
-```
-
-要求：
-- `--step-id` 仅允许：`Step 1` / `Step 2` / `Step 3` / `Step 4`
-- 任何记录失败只记警告，不阻断导出
-- 每个 Step 执行结束后，同样需要 `complete-step`
-
-### Step 1：收集导出信息
-
-确定导出参数：
-- 格式（`--format`）：markdown / txt / epub
-- 范围（`--range` 或 `--volume`）：全部 / 章节范围 / 卷号
-- 输出路径（`--output`）
-- 作者名（`--author`，仅 EPUB 需要）
-
-获取可导出章节列表：
-```bash
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export list
-```
-
-交互式获取（推荐）：
-```bash
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export
-```
-
-### Step 2：执行导出
-
-根据参数执行导出：
+## 快速开始
 
 ```bash
 # 交互式导出（推荐）
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export
 
-# 导出全部章节
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --format markdown
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --format txt
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --format epub --author "作者名"
-
-# 导出指定章节
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --range 1-10 --format markdown
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --range 1,3,5 --format txt
-
-# 导出指定卷
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --volume 1 --format markdown
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --volume 2 --format epub --author "作者名"
-
-# 指定输出路径
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --format markdown --output 我的小说.md
+# 命令行导出
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export --format markdown --range 1-50
 ```
 
-参数说明：
+## 目标
 
-| 参数 | 说明 |
-|------|------|
-| `--range` | 章节范围，如 `1-10`、`1,3,5`、`20-30`，或 `all`（默认） |
-| `--volume` | 导出指定卷，如 `1`、`2` |
-| `--format` | 输出格式：`markdown`（默认）、`txt`、`epub` |
-| `--output` | 输出文件路径（默认自动生成在 `导出/` 目录） |
-| `--author` | 作者名（仅 EPUB 格式需要） |
+将网文正文导出为不同格式，便于发布或存档。导出是只读操作，不需要审查/润色。
 
-### Step 3：验证输出文件
+## 支持格式
 
-导出完成后，验证输出文件：
+| 格式 | 文件扩展 | 说明 |
+|------|----------|------|
+| Markdown | `.md` | 可用任何编辑器打开，推荐 |
+| TXT | `.txt` | 纯文本，最通用 |
+| EPUB | `.epub` | 电子书，阅读器可用 |
+
+## 环境设置
 
 ```bash
-# 检查输出目录存在
-test -d "${PROJECT_ROOT}/导出"
+export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
+export SCRIPTS_DIR="$(cd "$(dirname "$0")/../../scripts" && pwd)"
 
-# 检查输出文件存在且非空
-test -s "${PROJECT_ROOT}/导出/novel.md"
-test -s "${PROJECT_ROOT}/导出/novel.txt"
-test -s "${PROJECT_ROOT}/导出/novel.epub"
+# 获取项目根目录
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" preflight
+export PROJECT_ROOT="$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
 ```
 
-记录导出结果到 workflow：
-```bash
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow complete-step --step-id "Step 2" --artifacts '{"export_file": "导出/novel.md", "chapters": 100}' || true
-```
+## 执行流程
 
-### Step 4：完成 workflow
+### Step 1：预检
 
 ```bash
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow complete-task --artifacts '{"ok": true, "export_count": 1}' || true
-```
-
-## 充分性闸门
-
-未满足以下条件前，不得结束流程：
-
-1. 预检成功：项目根目录和章节文件可访问
-2. 导出命令执行成功（返回码为 0）
-3. 输出文件存在且非空
-4. workflow 任务记录已更新
-
-## 验证与交付
-
-执行检查：
-
-```bash
-# 验证项目可访问
-test -f "${PROJECT_ROOT}/.webnovel/state.json" || test -d "${PROJECT_ROOT}/正文"
-
-# 验证输出文件
-test -s "${PROJECT_ROOT}/导出/novel.md" || test -s "${PROJECT_ROOT}/导出/novel.txt" || test -s "${PROJECT_ROOT}/导出/novel.epub"
-
-# 列出可导出章节
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export list
 ```
 
-成功标准：
-- 输出文件存在且内容可读
-- 导出章节数与请求范围一致
+验证：
+- 项目存在 `.webnovel/state.json` 或 `正文/` 目录
+- 有可导出的章节文件
 
-## 失败处理
+### Step 2：导出
 
-触发条件：
-- 预检失败（项目根目录不存在）
-- 章节文件缺失
-- 导出命令执行失败
-- 输出文件不存在或为空
+| 场景 | 命令 |
+|------|------|
+| 交互式导出 | `export` |
+| 导出全部 | `export --format markdown` |
+| 导出前50章 | `export --range 1-50 --format txt` |
+| 导出第1卷 | `export --volume 1 --format epub --author "作者名"` |
+| 指定文件名 | `export --format markdown --output 我的小说.md` |
 
-恢复流程：
-1. 检查预检输出，确认项目可访问
-2. 使用 `export list` 确认章节文件存在
-3. 检查导出命令输出中的错误信息
-4. 确认输出目录权限和磁盘空间
-5. 重跑导出步骤
+**参数说明**：
 
-> 注意：EPUB 格式依赖 `ebooklib`，已在 init.bat/init.sh 安装 requirements.txt 时一并安装。
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| `--format` | 输出格式 | `markdown`, `txt`, `epub` |
+| `--range` | 章节范围 | `1-10`, `1,3,5`, `all` |
+| `--volume` | 按卷导出 | `1`, `2` |
+| `--output` | 输出路径 | `小说.md`, `导出/第一卷.txt` |
+| `--author` | 作者名 | 仅 EPUB 需要 |
+
+### Step 3：验证
+
+```bash
+# 检查文件存在且非空
+test -s "${PROJECT_ROOT}/导出/小说.md"
+```
+
+### Step 4：记录 workflow
+
+```bash
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow complete-task --artifacts '{"ok": true}' || true
+```
+
+## 输出格式定义
+
+导出文件必须满足：
+
+1. **文件位置**：默认在 `{PROJECT_ROOT}/导出/` 目录
+2. **文件命名**：
+   - `小说.md` / `小说.txt` / `小说.epub`（全部章节）
+   - 用户指定名称（使用 `--output` 时）
+3. **内容要求**：
+   - 去除 frontmatter（`---` 之间的元数据）
+   - 保留章节标题
+   - 章节之间有分隔符
+4. **EPUB 特殊**：
+   - 包含书名和作者
+   - 章节作为独立 HTML 文件
+
+## 充分性闸门
+
+完成前必须验证：
+
+- [ ] 预检通过（章节文件存在）
+- [ ] 导出命令返回码为 0
+- [ ] 输出文件存在且大小 > 0
+
+## 常见错误
+
+| 错误 | 原因 | 解决 |
+|------|------|------|
+| 未找到章节 | `正文/` 目录不存在 | 先用 `/webnovel-write` 创建章节 |
+| 导出失败 | ebooklib 未安装 | `pip install ebooklib` |
+| 格式不支持 | 用了不支持的格式 | 使用 markdown/txt/epub |
+
+## 依赖
+
+- Python 3.10+
+- `ebooklib`（EPUB 导出需要）
+
+> 注意：`ebooklib` 已在 `init.bat`/`init.sh` 安装 requirements.txt 时一并安装。
