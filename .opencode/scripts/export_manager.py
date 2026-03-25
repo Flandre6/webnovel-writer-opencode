@@ -5,8 +5,8 @@
 
 支持将章节正文导出为多种格式：
 - TXT: 纯文本
+- Markdown: Markdown 格式
 - EPUB: 电子书
-- DOCX: Word 文档
 """
 
 from __future__ import annotations
@@ -142,7 +142,57 @@ class ExportManager:
         print(f"[OK] 已导出 TXT: {output_file} ({len(chapters)} 章)")
         return len(chapters)
 
-    def export_to_docx(
+    def export_to_markdown(
+        self,
+        chapters: List[int],
+        output_path: str,
+    ) -> int:
+        """导出为 Markdown 格式
+
+        Args:
+            chapters: 章节列表
+            output_path: 输出文件路径
+
+        Returns:
+            导出的章节数量
+        """
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_file = Path(output_path)
+        if output_file.is_dir():
+            output_file = self.output_dir / f"{self.project_root.name}.md"
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            for i, chapter in enumerate(chapters):
+                title, content = self.get_chapter_content(chapter)
+
+                # 章节标题（Markdown 格式）
+                f.write(f"\n## {title}\n\n")
+
+                # 去除 frontmatter（--- 之间的内容）
+                lines = content.split("\n")
+                in_frontmatter = False
+                frontmatter_count = 0
+
+                for line in lines:
+                    if line.strip() == "---":
+                        frontmatter_count += 1
+                        if frontmatter_count == 1:
+                            in_frontmatter = True
+                            continue
+                        elif frontmatter_count == 2:
+                            in_frontmatter = False
+                            continue
+                    if not in_frontmatter and line.strip():
+                        f.write(line + "\n")
+
+                if i < len(chapters) - 1:
+                    f.write("\n---\n")
+
+        print(f"[OK] 已导出 Markdown: {output_file} ({len(chapters)} 章)")
+        return len(chapters)
+
+    def export_to_epub(
         self,
         chapters: List[int],
         output_path: str,
@@ -306,7 +356,7 @@ def main():
     )
     p_export.add_argument(
         "--format",
-        choices=["txt", "docx", "epub"],
+        choices=["txt", "markdown", "epub"],
         default="txt",
         help="导出格式",
     )
@@ -314,7 +364,7 @@ def main():
         "--output",
         help="输出文件路径（默认自动生成）",
     )
-    p_export.add_argument("--author", default="未知作者", help="作者名（EPUB/DOCX）")
+    p_export.add_argument("--author", default="未知作者", help="作者名（仅 EPUB 需要）")
     p_export.set_defaults(func=cmd_export)
 
     args = parser.parse_args()
@@ -341,8 +391,8 @@ def main():
 
         if args.format == "txt":
             manager.export_to_txt(chapters, output_path)
-        elif args.format == "docx":
-            manager.export_to_docx(chapters, output_path)
+        elif args.format == "markdown":
+            manager.export_to_markdown(chapters, output_path)
         elif args.format == "epub":
             manager.export_to_epub(chapters, output_path, author=args.author)
 

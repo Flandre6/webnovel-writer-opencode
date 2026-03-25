@@ -19,11 +19,12 @@ WORKSPACE_ROOT/
 
 ```
 .opencode/
-├── skills/              # 7个 Skills
+├── skills/              # 8个 Skills
 │   ├── webnovel-init/
 │   ├── webnovel-plan/
 │   ├── webnovel-write/
 │   ├── webnovel-review/
+│   ├── webnovel-export/
 │   ├── webnovel-query/
 │   ├── webnovel-resume/
 │   └── webnovel-learn/
