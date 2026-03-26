@@ -387,7 +387,22 @@ def main():
             print("没有可导出的章节")
             return
 
-        output_path = args.output or f"{Path(args.project_root).name}.{args.format}"
+        # 默认输出到导出目录，文件名取自 state.json 的 title
+        if args.output:
+            output_path = args.output
+        else:
+            # 从 state.json 读取 title
+            title = "novel"
+            state_path = Path(args.project_root) / ".webnovel" / "state.json"
+            if state_path.exists():
+                try:
+                    import json
+                    with open(state_path, "r", encoding="utf-8") as f:
+                        state = json.load(f)
+                    title = state.get("project", {}).get("title", "novel")
+                except Exception:
+                    pass
+            output_path = str(manager.output_dir / f"{title}.{args.format}")
 
         if args.format == "txt":
             manager.export_to_txt(chapters, output_path)
