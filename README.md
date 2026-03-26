@@ -86,7 +86,7 @@ RERANK_API_KEY=your_api_key
 |------|----------|
 | `/webnovel-init` | 深度初始化网文项目，收集创作信息生成项目骨架 |
 | `/webnovel-plan` | 构建卷纲和章节大纲，继承创意约束 |
-| `/webnovel-write` | 撰写章节，支持 `--chapters N` 批量连写多章 |
+| `/webnovel-write` | 撰写章节，支持 `--fast` 和 `--minimal` 模式 |
 | `/webnovel-review` | 使用检查器审查章节质量 |
 | `/webnovel-export` | 导出正文为 Markdown/TXT/EPUB 格式 |
 | `/webnovel-dashboard` | 小说架构看板，可视化卷结构、角色状态、伏笔追踪 |

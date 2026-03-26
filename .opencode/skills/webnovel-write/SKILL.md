@@ -1,57 +1,27 @@
 ---
 name: webnovel-write
-description: 撰写网文章节（默认2000-2500字）。当用户要求撰写章节或执行/webnovel-write时使用。包含上下文搜集、草稿撰写、审查、润色、数据提取。
+description: 撰写网文章节。用于用户说"写一章"、"写第X章"、"继续写"、"创作章节"、"起草章节"时，或执行/webnovel-write命令。默认产出2000-2500字，包含完整流程：上下文搜集 → 起草 → 审查 → 润色 → 数据回写。确保审查和状态回写闭环，避免上下文丢失。配合--fast跳过风格转译，--minimal仅基础审查。
 allowed-tools: Read Write Edit Grep Bash Task
 ---
 
-# Chapter Writing (Structured Workflow)
+# 网文写作 Skill
 
-## 目标
+## 快速参考
 
-- 以稳定流程产出可发布章节：优先使用 `正文/第{NNNN}章-{title_safe}.md`，无标题时回退 `正文/第{NNNN}章.md`。
-- 默认章节字数目标：2000-2500（用户或大纲明确覆盖时从其约定）。
-- 保证审查、润色、数据回写完整闭环，避免“写完即丢上下文”。
-- 输出直接可被后续章节消费的结构化数据：`review_metrics`、`summaries`、`chapter_meta`。
+| 模式 | 流程 |
+|------|------|
+| 标准 | Step 0 → 1 → 2A → 2B → 3 → 4 → 5 → 6 |
+| --fast | Step 0 → 1 → 2A → 3 → 4 → 5 → 6 |
+| --minimal | Step 0 → 1 → 2A → 3 → 4 → 5 → 6 |
 
-## 执行原则
+**产出**：`正文/第NNNN章-{title}.md`、`review_metrics`、`.webnovel/summaries/chNNNN.md`
 
-1. 先校验输入完整性，再进入写作流程；缺关键输入时立即阻断。
-2. 审查与数据回写是硬步骤，`--fast`/`--minimal` 只允许降级可选环节。
-3. 参考资料严格按步骤按需加载，不一次性灌入全部文档。
-4. Step 2B 与 Step 4 职责分离：2B 只做风格转译，4 只做问题修复与质控。
-5. 任一步失败优先做最小回滚，不重跑全流程。
+## 核心约束
 
-## 模式定义
-
-- `/webnovel-write`：Step 0 → 1 → 2A → 2B → 3 → 4 → 5 → 6（单章模式）
-- `/webnovel-write --fast`：Step 0 → 1 → 2A → 3 → 4 → 5 → 6（跳过 2B）
-- `/webnovel-write --minimal`：Step 0 → 1 → 2A → 3（仅3个基础审查）→ 4 → 5 → 6
-- `/webnovel-write --chapters N`：Step 0 → 0.1 → 7.1 → 7.2（循环N次）→ 7.3（如失败）→ 7.4（批量模式）
-
-最小产物（单章）：
-- `正文/第{NNNN}章-{title_safe}.md` 或 `正文/第{NNNN}章.md`
-- `index.db.review_metrics` 新纪录（含 `overall_score`）
-- `.webnovel/summaries/ch{NNNN}.md`
-- `.webnovel/state.json` 的进度与 `chapter_meta` 更新
-
-最小产物（批量）：
-- N 个章节文件（每个章都经历完整写作流程）
-- 批量执行日志（每章的评分和状态）
-
-### 流程硬约束（禁止事项）
-
-- **禁止并步**：不得将两个 Step 合并为一个动作执行（如同时做 2A 和 3）。
-- **禁止跳步**：不得跳过未被模式定义标记为可跳过的 Step。
-- **禁止临时改名**：不得将 Step 的输出产物改写为非标准文件名或格式。
-- **禁止自创模式**：`--fast` / `--minimal` 只允许按上方定义裁剪步骤，不允许自创混合模式、"半步"或"简化版"。
-- **禁止自审替代**：Step 3 审查必须由 Task 子代理执行，主流程不得内联伪造审查结论。
-- **禁止源码探测**：脚本调用方式以本文档与 data-agent 文档中的命令示例为准，命令失败时查日志定位问题，不去翻源码学习调用方式。
-
-### 批量模式流程规则
-
-- **批量模式 ≠ 简化模式**：每章都必须走完整流程（Step 1-6），不得跳过任何步骤
-- **禁止批量简化**：批量模式只是批量调度多章，每章内部流程不变
-- **禁止跳过审查**：即使批量写多章，每章也必须完成审查（Step 3）后才能进入下一章
+- **禁止跳步**：审查（Step 3）必须由 Task 子代理执行
+- **禁止并步**：每个 Step 独立执行
+- **最小回滚**：失败只重跑该 Step，不回滚已通过步骤
+- **中文写作**：禁止"先英后中"、英文结论话术
 
 ## 引用加载等级（strict, lazy）
 
@@ -63,98 +33,73 @@ allowed-tools: Read Write Edit Grep Bash Task
 - `references/...` 相对当前 skill 目录。
 - `../../references/...` 指向全局共享参考。
 
-## References（逐文件引用清单）
+## References（按需加载）
 
-### 根目录
+| 文件 | 用途 | 触发 |
+|------|------|------|
+| `../../checkers/registry.yaml` | 审查器列表 | Step 3 |
+| `../../checkers/schema.yaml` | 审查器输出格式 | Step 3 |
+| `../../references/shared/core-constraints.md` | 写作硬约束 | Step 2A |
+| `references/polish-guide.md` | 问题修复、Anti-AI | Step 4 |
+| `references/writing/typesetting.md` | 排版规则 | Step 4 |
+| `references/style-adapter.md` | 风格转译 | Step 2B |
 
-- `../../checkers/registry.yaml`
-  - 用途：审查器注册表，包含审查器列表、分类（core/conditional）、触发条件、模式配置，`file` 字段指向 agent 文件。
-  - 触发：Step 3 必读（用于动态加载审查器列表）。
-- `../../agents/*.md`（审查器 agent 文件）
-  - 用途：审查器实际逻辑实现，包含 prompt 模板和输出格式定义。
-  - 路径：由 registry.yaml 中各审查器的 `file` 字段指定（如 `../agents/consistency-checker.md`）。
-  - 触发：Task 调用审查器时自动加载。
-- `../../checkers/schema.yaml`
-  - 用途：审查器输出 Schema 定义，包含 metrics 结构。
-  - 触发：Step 3 必读（用于校验审查器输出格式）。
-- `references/step-5-debt-switch.md`
-  - 用途：Step 5 债务利息开关规则（默认关闭）。
-  - 触发：Step 5 必读。
-- `../../references/shared/core-constraints.md`
-  - 用途：Step 2A 写作硬约束（大纲即法律 / 设定即物理 / 发明需识别）。
-  - 触发：Step 2A 必读。
-- `references/polish-guide.md`
-  - 用途：Step 4 问题修复、Anti-AI 与 No-Poison 规则。
-  - 触发：Step 4 必读。
-- `references/writing/typesetting.md`
-  - 用途：Step 4 移动端阅读排版与发布前速查。
-  - 触发：Step 4 必读。
-- `references/style-adapter.md`
-  - 用途：Step 2B 风格转译规则，不改剧情事实。
-  - 触发：Step 2B 执行时必读（`--fast`/`--minimal` 跳过）。
-- `references/style-variants.md`
-  - 用途：Step 1（内置 Contract）开头/钩子/节奏变体与重复风险控制。
-  - 触发：Step 1 当需要做差异化设计时加载。
-- `../../references/reading-power-taxonomy.md`
-  - 用途：Step 1（内置 Contract）钩子、爽点、微兑现 taxonomy。
-  - 触发：Step 1 当需要追读力设计时加载。
-- `../../references/genre-profiles.md`
-  - 用途：Step 1（内置 Contract）按题材配置节奏阈值与钩子偏好。
-  - 触发：Step 1 当 `state.project.genre` 已知时加载。
-- `references/writing/genre-hook-payoff-library.md`
-  - 用途：电竞/直播文/克苏鲁的钩子与微兑现快速库。
-  - 触发：Step 1 题材命中 `esports/livestream/cosmic-horror` 时必读。
+条件加载：题材配置、钩子库、战斗/对话/场景专项指南（见完整版）
 
-### writing（问题定向加读）
+## 工具
 
-- `references/writing/combat-scenes.md`
-  - 触发：战斗章或审查命中“战斗可读性/镜头混乱”。
-- `references/writing/dialogue-writing.md`
-  - 触发：审查命中 OOC、对话说明书化、对白辨识差。
-- `references/writing/emotion-psychology.md`
-  - 触发：情绪转折生硬、动机断层、共情弱。
-- `references/writing/scene-description.md`
-  - 触发：场景空泛、空间方位不清、切场突兀。
-- `references/writing/desire-description.md`
-  - 触发：主角目标弱、欲望驱动力不足。
+- **Read/Grep**：读取 state、大纲、参考文件
+- **Bash**：运行 webnovel.py 命令
+- **Task**：调用 context-agent、审查器、data-agent
 
-## 工具策略（按需）
+## 执行流程
 
-- `Read/Grep`：读取 `state.json`、大纲、章节正文与参考文件。
-- `Bash`：运行 `extract_chapter_context.py`、`index_manager`、`workflow_manager`。
-- `Task`：调用 `context-agent`、审查 subagent、`data-agent` 并行执行。
+### Step 0：预检
 
-## 交互流程
-
-### Step 0：预检与上下文最小加载
-
-必须做：
-- 解析真实书项目根（book project_root）：必须包含 `.webnovel/state.json`。
-- 校验核心输入：`大纲/总纲.md`、`extract_chapter_context.py` 存在。
-- 规范化变量：
-  - `WORKSPACE_ROOT`：OpenCode 打开的工作区根目录
-  - `PROJECT_ROOT`：真实书项目根目录（必须包含 `.webnovel/state.json`）
-  - `SKILL_ROOT`：skill 所在目录
-  - `SCRIPTS_DIR`：脚本目录（`.opencode/scripts/`）
-  - `chapter_num`：当前章号（整数）
-  - `chapter_padded`：四位章号（如 `0007`）
-
-环境设置（bash 命令执行前）：
 ```bash
-export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
-
-# 获取 skill 所在目录
-export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
-# OpenCode 中 scripts 在 .opencode/scripts/
-export SCRIPTS_DIR="${SKILL_ROOT}/../../scripts"
-
+# 确认项目根
+SCRIPTS_DIR=".opencode/scripts"
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" preflight
-export PROJECT_ROOT="$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
+PROJECT_ROOT="$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
 ```
 
-**硬门槛**：`preflight` 必须成功。它统一校验 `SCRIPTS_DIR`、`webnovel.py`、`extract_chapter_context.py` 和解析出的 `PROJECT_ROOT`。任一失败都立即阻断。
+**硬门槛**：preflight 必须成功。失败则阻断。
 
-输出：
+### Step 1：Context Agent
+
+使用 Task 调用 `context-agent`，生成创作执行包（任务书 + Context Contract + 直写提示词）。
+
+### Step 2A：正文起草
+
+加载 `core-constraints.md`，输出纯正文到 `正文/第{chapter_padded}章.md`。
+
+**约束**：禁止占位符、保留上章钩子、2000-2500字、中文叙事单元。
+
+### Step 2B：风格适配（--fast/--minimal 跳过）
+
+加载 `style-adapter.md`，只做表达层转译，不改剧情事实。
+
+### Step 3：审查
+
+调用审查器（Task）：
+- 核心审查器：consistency-checker、continuity-checker、ooc-checker
+- 条件审查器：reader-pull-checker、high-point-checker、pacing-checker
+
+**要求**：必须由 Task 子代理执行，critical > 0 则修复后才能进入 Step 4。
+
+### Step 4：润色
+
+加载 `polish-guide.md` + `typesetting.md`。按序修复 critical/high/medium/low，执行 Anti-AI 终检。
+
+### Step 5：Data Agent
+
+使用 Task 调用 `data-agent`，执行实体提取、状态回写、场景切片、RAG 索引。
+
+### Step 6：Git 备份
+
+```bash
+git add . && git commit -m "第{chapter_num}章: {title}"
+```
 - “已就绪输入”与“缺失输入”清单；缺失则阻断并提示先补齐。
 
 ### Step 0.5：工作流断点记录（best-effort，不阻断）
@@ -167,32 +112,9 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" wor
 ```
 
 要求：
-- `--step-id` 仅允许：`Step 1` / `Step 2A` / `Step 2B` / `Step 3` / `Step 4` / `Step 5` / `Step 6` / `Step 7`。
+- `--step-id` 仅允许：`Step 1` / `Step 2A` / `Step 2B` / `Step 3` / `Step 4` / `Step 5` / `Step 6`。
 - 任何记录失败只记警告，不阻断写作。
 - 每个 Step 执行结束后，同样需要 `complete-step`（失败不阻断）。
-
-### Step 0.1：批量模式参数解析（仅当 `--chapters > 1` 时执行）
-
-**此 Step 仅在批量模式下执行**。单章模式（`--chapters=1` 或无参数）跳过此 Step。
-
-```bash
-# 解析 --chapters 参数
-BATCH_COUNT="${BATCH_COUNT:-1}"
-
-# 参数校验
-if [ "${BATCH_COUNT}" -le 0 ]; then
-    echo "错误：--chapters 必须大于 0"
-    exit 1
-fi
-
-# 从 state.json 获取当前章节号
-CURRENT_CHAPTER=$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" state get-progress 2>/dev/null | grep -oE 'current_chapter[": ]+[0-9]+' | grep -oE '[0-9]+' || echo "0")
-START_CHAPTER=$((CURRENT_CHAPTER + 1))
-
-echo "批量写作模式：将从第 ${START_CHAPTER} 章开始，连续写入 ${BATCH_COUNT} 章"
-```
-
-**进入条件**：`BATCH_COUNT > 1`
 
 ### Step 1：Context Agent（内置 Context Contract，生成直写执行包）
 
@@ -469,122 +391,6 @@ git -c i18n.commitEncoding=UTF-8 commit -m "第{chapter_num}章: {title}"
 - 提交时机：验证、回写、清理全部完成后最后执行。
 - 提交信息默认中文，格式：`第{chapter_num}章: {title}`。
 - 若 commit 失败，必须给出失败原因与未提交文件范围。
-
-### Step 7：批量子代理调度（仅当 `--chapters > 1` 时执行）
-
-**此 Step 仅在批量模式下执行**。单章模式跳过此 Step。
-
-#### 7.1 检测已有章节
-
-```bash
-# 获取已存在章节列表
-EXISTING_CHAPTERS=$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export list 2>/dev/null || echo "")
-
-echo "已存在章节: ${EXISTING_CHAPTERS}"
-```
-
-#### 7.2 循环调用子代理
-
-```bash
-# 初始化计数器
-SUCCESS_COUNT=0
-FAILED_CHAPTER=""
-
-for i in $(seq 1 ${BATCH_COUNT}); do
-    CHAPTER_NUM=$((START_CHAPTER + i - 1))
-    chapter_padded=$(printf "%04d" ${CHAPTER_NUM})
-    
-    # 检查是否已存在
-    if echo "${EXISTING_CHAPTERS}" | grep -qw "${CHAPTER_NUM}"; then
-        echo "[跳过] 第 ${CHAPTER_NUM} 章已存在"
-        continue
-    fi
-    
-    echo ""
-    echo "[${i}/${BATCH_COUNT}] 正在写第 ${CHAPTER_NUM} 章..."
-    
-    # 调用子代理执行单章写作
-    # 使用 Task 工具调用 webnovel-write（单章模式）
-    # 传递当前章节号作为参数
-    Task(
-        subagent="webnovel-write",
-        prompt="请执行单章写作流程，写第 ${CHAPTER_NUM} 章。
-                项目根目录: ${PROJECT_ROOT}
-                使用标准流程: 预检 → 上下文搜集 → 起草 → 审查 → 润色 → 数据回写
-                注意：只需写一章，不要尝试写多章。"
-    )
-    
-    # 检查子代理执行结果
-    # 如果失败，记录并回滚
-    if [ $? -ne 0 ]; then
-        echo "[失败] 第 ${CHAPTER_NUM} 章写作失败"
-        FAILED_CHAPTER=${CHAPTER_NUM}
-        break
-    fi
-    
-    # 成功，收集评分（从最近的 review_metrics 或 workflow 记录）
-    echo "[完成] 第 ${CHAPTER_NUM} 章"
-    SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-    
-    # 更新已存在章节列表（供下一轮检查）
-    EXISTING_CHAPTERS="${EXISTING_CHAPTERS} ${CHAPTER_NUM}"
-done
-```
-
-#### 7.3 失败回滚
-
-**当某章失败时，执行回滚**：
-
-```bash
-if [ -n "${FAILED_CHAPTER}" ]; then
-    echo ""
-    echo "========================================"
-    echo "批量写作中断：第 ${FAILED_CHAPTER} 章失败"
-    echo "========================================"
-    
-    # 回滚已成功写入的章节
-    ROLLBACK_START=${START_CHAPTER}
-    ROLLBACK_END=$((FAILED_CHAPTER - 1))
-    
-    if [ ${ROLLBACK_START} -le ${ROLLBACK_END} ]; then
-        echo "正在回滚第 ${ROLLBACK_START}-${ROLLBACK_END} 章..."
-        
-        for n in $(seq ${ROLLBACK_START} ${ROLLBACK_END}); do
-            n_padded=$(printf "%04d" ${n})
-            # 删除章节文件
-            rm -f "${PROJECT_ROOT}/正文/第${n_padded}章"*.md 2>/dev/null || true
-            # 删除摘要文件
-            rm -f "${PROJECT_ROOT}/.webnovel/summaries/ch${n_padded}.md" 2>/dev/null || true
-        done
-        
-        echo "已回滚 ${SUCCESS_COUNT} 章"
-    fi
-    
-    exit 1
-fi
-```
-
-#### 7.4 结果汇总
-
-```bash
-echo ""
-echo "========================================"
-echo "批量写作完成"
-echo "成功: ${SUCCESS_COUNT}/${BATCH_COUNT} 章"
-echo "起始章节: ${START_CHAPTER}"
-echo "========================================"
-```
-
-#### 批量模式流程图
-
-```
-批量模式 (--chapters=N):
-  Step 0 → Step 0.1 (解析参数) → Step 7.1 (检测已有章节)
-       ↘ Step 7.2 (循环调用子代理 N 次)
-           ↘ 成功 → 继续下一章
-           ↘ 失败 → Step 7.3 (回滚) → exit 1
-       ↘ Step 7.4 (结果汇总)
-```
 
 ## 充分性闸门（必须通过）
 
