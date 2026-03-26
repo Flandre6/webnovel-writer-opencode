@@ -30,7 +30,18 @@
 ```
 /webnovel-write 1
 /webnovel-write 45
+
+# 批量模式：连续写多章
+/webnovel-write --chapters 5
 ```
+
+参数：
+
+| 参数 | 说明 |
+|------|------|
+| `--chapters N` | 批量模式，从 current_chapter+1 开始连续写 N 章 |
+| `--fast` | 跳过风格转译（Step 2B） |
+| `--minimal` | 仅执行基础审查 |
 
 ## `/webnovel-review [范围]`
 
