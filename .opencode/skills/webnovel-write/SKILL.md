@@ -23,15 +23,20 @@ allowed-tools: Read Write Edit Grep Bash Task
 
 ## 模式定义
 
-- `/webnovel-write`：Step 1 → 2A → 2B → 3 → 4 → 5 → 6
-- `/webnovel-write --fast`：Step 1 → 2A → 3 → 4 → 5 → 6（跳过 2B）
-- `/webnovel-write --minimal`：Step 1 → 2A → 3（仅3个基础审查）→ 4 → 5 → 6
+- `/webnovel-write`：Step 0 → 1 → 2A → 2B → 3 → 4 → 5 → 6（单章模式）
+- `/webnovel-write --fast`：Step 0 → 1 → 2A → 3 → 4 → 5 → 6（跳过 2B）
+- `/webnovel-write --minimal`：Step 0 → 1 → 2A → 3（仅3个基础审查）→ 4 → 5 → 6
+- `/webnovel-write --chapters N`：Step 0 → 0.1 → 7.1 → 7.2（循环N次）→ 7.3（如失败）→ 7.4（批量模式）
 
-最小产物（所有模式）：
+最小产物（单章）：
 - `正文/第{NNNN}章-{title_safe}.md` 或 `正文/第{NNNN}章.md`
 - `index.db.review_metrics` 新纪录（含 `overall_score`）
 - `.webnovel/summaries/ch{NNNN}.md`
 - `.webnovel/state.json` 的进度与 `chapter_meta` 更新
+
+最小产物（批量）：
+- N 个章节文件（每个章都经历完整写作流程）
+- 批量执行日志（每章的评分和状态）
 
 ### 流程硬约束（禁止事项）
 
@@ -156,9 +161,32 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" wor
 ```
 
 要求：
-- `--step-id` 仅允许：`Step 1` / `Step 2A` / `Step 2B` / `Step 3` / `Step 4` / `Step 5` / `Step 6`。
+- `--step-id` 仅允许：`Step 1` / `Step 2A` / `Step 2B` / `Step 3` / `Step 4` / `Step 5` / `Step 6` / `Step 7`。
 - 任何记录失败只记警告，不阻断写作。
 - 每个 Step 执行结束后，同样需要 `complete-step`（失败不阻断）。
+
+### Step 0.1：批量模式参数解析（仅当 `--chapters > 1` 时执行）
+
+**此 Step 仅在批量模式下执行**。单章模式（`--chapters=1` 或无参数）跳过此 Step。
+
+```bash
+# 解析 --chapters 参数
+BATCH_COUNT="${BATCH_COUNT:-1}"
+
+# 参数校验
+if [ "${BATCH_COUNT}" -le 0 ]; then
+    echo "错误：--chapters 必须大于 0"
+    exit 1
+fi
+
+# 从 state.json 获取当前章节号
+CURRENT_CHAPTER=$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" state get-progress 2>/dev/null | grep -oE 'current_chapter[": ]+[0-9]+' | grep -oE '[0-9]+' || echo "0")
+START_CHAPTER=$((CURRENT_CHAPTER + 1))
+
+echo "批量写作模式：将从第 ${START_CHAPTER} 章开始，连续写入 ${BATCH_COUNT} 章"
+```
+
+**进入条件**：`BATCH_COUNT > 1`
 
 ### Step 1：Context Agent（内置 Context Contract，生成直写执行包）
 
@@ -435,6 +463,122 @@ git -c i18n.commitEncoding=UTF-8 commit -m "第{chapter_num}章: {title}"
 - 提交时机：验证、回写、清理全部完成后最后执行。
 - 提交信息默认中文，格式：`第{chapter_num}章: {title}`。
 - 若 commit 失败，必须给出失败原因与未提交文件范围。
+
+### Step 7：批量子代理调度（仅当 `--chapters > 1` 时执行）
+
+**此 Step 仅在批量模式下执行**。单章模式跳过此 Step。
+
+#### 7.1 检测已有章节
+
+```bash
+# 获取已存在章节列表
+EXISTING_CHAPTERS=$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" export list 2>/dev/null || echo "")
+
+echo "已存在章节: ${EXISTING_CHAPTERS}"
+```
+
+#### 7.2 循环调用子代理
+
+```bash
+# 初始化计数器
+SUCCESS_COUNT=0
+FAILED_CHAPTER=""
+
+for i in $(seq 1 ${BATCH_COUNT}); do
+    CHAPTER_NUM=$((START_CHAPTER + i - 1))
+    chapter_padded=$(printf "%04d" ${CHAPTER_NUM})
+    
+    # 检查是否已存在
+    if echo "${EXISTING_CHAPTERS}" | grep -qw "${CHAPTER_NUM}"; then
+        echo "[跳过] 第 ${CHAPTER_NUM} 章已存在"
+        continue
+    fi
+    
+    echo ""
+    echo "[${i}/${BATCH_COUNT}] 正在写第 ${CHAPTER_NUM} 章..."
+    
+    # 调用子代理执行单章写作
+    # 使用 Task 工具调用 webnovel-write（单章模式）
+    # 传递当前章节号作为参数
+    Task(
+        subagent="webnovel-write",
+        prompt="请执行单章写作流程，写第 ${CHAPTER_NUM} 章。
+                项目根目录: ${PROJECT_ROOT}
+                使用标准流程: 预检 → 上下文搜集 → 起草 → 审查 → 润色 → 数据回写
+                注意：只需写一章，不要尝试写多章。"
+    )
+    
+    # 检查子代理执行结果
+    # 如果失败，记录并回滚
+    if [ $? -ne 0 ]; then
+        echo "[失败] 第 ${CHAPTER_NUM} 章写作失败"
+        FAILED_CHAPTER=${CHAPTER_NUM}
+        break
+    fi
+    
+    # 成功，收集评分（从最近的 review_metrics 或 workflow 记录）
+    echo "[完成] 第 ${CHAPTER_NUM} 章"
+    SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    
+    # 更新已存在章节列表（供下一轮检查）
+    EXISTING_CHAPTERS="${EXISTING_CHAPTERS} ${CHAPTER_NUM}"
+done
+```
+
+#### 7.3 失败回滚
+
+**当某章失败时，执行回滚**：
+
+```bash
+if [ -n "${FAILED_CHAPTER}" ]; then
+    echo ""
+    echo "========================================"
+    echo "批量写作中断：第 ${FAILED_CHAPTER} 章失败"
+    echo "========================================"
+    
+    # 回滚已成功写入的章节
+    ROLLBACK_START=${START_CHAPTER}
+    ROLLBACK_END=$((FAILED_CHAPTER - 1))
+    
+    if [ ${ROLLBACK_START} -le ${ROLLBACK_END} ]; then
+        echo "正在回滚第 ${ROLLBACK_START}-${ROLLBACK_END} 章..."
+        
+        for n in $(seq ${ROLLBACK_START} ${ROLLBACK_END}); do
+            n_padded=$(printf "%04d" ${n})
+            # 删除章节文件
+            rm -f "${PROJECT_ROOT}/正文/第${n_padded}章"*.md 2>/dev/null || true
+            # 删除摘要文件
+            rm -f "${PROJECT_ROOT}/.webnovel/summaries/ch${n_padded}.md" 2>/dev/null || true
+        done
+        
+        echo "已回滚 ${SUCCESS_COUNT} 章"
+    fi
+    
+    exit 1
+fi
+```
+
+#### 7.4 结果汇总
+
+```bash
+echo ""
+echo "========================================"
+echo "批量写作完成"
+echo "成功: ${SUCCESS_COUNT}/${BATCH_COUNT} 章"
+echo "起始章节: ${START_CHAPTER}"
+echo "========================================"
+```
+
+#### 批量模式流程图
+
+```
+批量模式 (--chapters=N):
+  Step 0 → Step 0.1 (解析参数) → Step 7.1 (检测已有章节)
+       ↘ Step 7.2 (循环调用子代理 N 次)
+           ↘ 成功 → 继续下一章
+           ↘ 失败 → Step 7.3 (回滚) → exit 1
+       ↘ Step 7.4 (结果汇总)
+```
 
 ## 充分性闸门（必须通过）
 
