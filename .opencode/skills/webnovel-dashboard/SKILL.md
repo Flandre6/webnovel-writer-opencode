@@ -1,13 +1,6 @@
 ---
 name: webnovel-dashboard
 description: 小说架构看板 - 可视化展示小说的卷结构、角色状态、伏笔追踪、审查报告、时间线和势力版图。支持任意webnovel项目。
-version: 1.1.0
-author: opencode
-tags:
-  - 看板
-  - 可视化
-  - 小说管理
-  - 审查
 ---
 
 # webnovel-dashboard

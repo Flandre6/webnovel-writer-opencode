@@ -30,10 +30,10 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                      OpenCode                               │
 ├─────────────────────────────────────────────────────────────┤
-│  Skills (7个): init / plan / write / review / query /      │
-│                resume / learn                               │
+│  Skills (9个): init / plan / write / review / export /     │
+│                dashboard / query / resume / learn           │
 ├─────────────────────────────────────────────────────────────┤
-│  Agents (10个): context-agent / data-agent /                │
+│  Agents (8个): context-agent / data-agent /                 │
 │                 6 维 Checker                                 │
 ├─────────────────────────────────────────────────────────────┤
 │  Data Layer: state.json / index.db / vectors.db            │
@@ -66,13 +66,14 @@
 ```
 项目目录/
 ├── .opencode/              # OpenCode 配置
-│   ├── skills/            # 7个 Skills
-│   ├── scripts/           # Python 核心脚本
-│   ├── references/        # 参考文档
-│   ├── genres/            # 题材参考（38+）
-│   └── templates/         # 输出模板
+│   ├── skills/            # 9个 Skills
+│   ├── agents/           # 8个 Agents（context-agent, data-agent, 6个 Checker）
+│   ├── checkers/         # 审查器配置驱动
+│   ├── scripts/          # Python 核心脚本
+│   ├── references/      # 参考文档
+│   ├── genres/          # 题材参考（38+）
+│   └── templates/       # 输出模板
 ├── opencode.json          # Agents 配置
-├── prompts/               # Agent 提示词
 ├── .env                   # API 配置
 └── init.sh / init.bat    # 安装脚本
 ```
