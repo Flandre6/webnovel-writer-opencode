@@ -16,7 +16,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     <style>
         :root {
             --primary: #667eea;
@@ -608,27 +610,69 @@
                         <option value="branch">支线伏笔</option>
                         <option value="undone">未回收</option>
                         <option value="done">已回收</option>
+                        <option value="urgent">即将到期</option>
                     </select>
+                </div>
+                <!-- 伏笔统计 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-amber-500">{{ foreshadowStats.total }}</p>
+                        <p class="text-sm opacity-60">总数</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-500">{{ foreshadowStats.undone }}</p>
+                        <p class="text-sm opacity-60">未回收</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-green-500">{{ foreshadowStats.done }}</p>
+                        <p class="text-sm opacity-60">已回收</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-red-500">{{ foreshadowStats.urgent }}</p>
+                        <p class="text-sm opacity-60">即将到期</p>
+                    </div>
                 </div>
                 <div class="space-y-3">
                     <div v-for="item in filteredForeshadowing" :key="item.content" 
-                         class="card card-light p-4 flex items-center gap-4">
-                        <div class="w-3 h-3 rounded-full"
-                             :class="item.tier === '核心' ? 'bg-amber-500' : 'bg-blue-500'"></div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <span class="font-medium">{{ item.content }}</span>
-                                <span class="badge text-xs" :class="item.tier === '核心' ? 'badge-core' : 'badge-branch'">
-                                    {{ item.tier }}
-                                </span>
+                         class="card card-light p-4"
+                         :class="{'border-l-4 border-red-500': (item.isUrgent || item.isOverdue) && item.status === '未回收'}">
+                        <div class="flex items-start gap-4">
+                            <div class="w-3 h-3 rounded-full mt-2"
+                                 :class="item.tier === '核心' ? 'bg-amber-500' : 'bg-blue-500'"></div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-medium">{{ item.content }}</span>
+                                    <span class="badge text-xs" :class="item.tier === '核心' ? 'badge-core' : 'badge-branch'">
+                                        {{ item.tier }}
+                                    </span>
+                                    <span v-if="item.isOverdue && item.status === '未回收'" class="badge text-xs bg-red-600 text-white">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>已过期
+                                    </span>
+                                    <span v-else-if="item.isUrgent && item.status === '未回收'" class="badge text-xs bg-red-500 text-white">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>即将到期
+                                    </span>
+                                </div>
+                                <p class="text-sm opacity-60 mt-1">
+                                    埋设: 第{{ item.planted }}章 → 回收: 第{{ item.target }}章
+                                    <span v-if="item.status === '未回收' && item.target > progress.currentChapter" class="ml-2">
+                                        (距回收还有 {{ item.target - progress.currentChapter }} 章)
+                                    </span>
+                                    <span v-if="item.status === '未回收' && item.target <= progress.currentChapter" class="ml-2 text-red-500">
+                                        (已过回收期 {{ progress.currentChapter - item.target }} 章)
+                                    </span>
+                                </p>
+                                <!-- 回收进度条 -->
+                                <div v-if="item.status === '未回收'" class="mt-2">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" :style="{ width: item.progress + '%' }"></div>
+                                    </div>
+                                    <p class="text-xs opacity-50 mt-1">进度: {{ item.progress }}%</p>
+                                </div>
                             </div>
-                            <p class="text-sm opacity-60">
-                                埋设: 第{{ item.planted }}章 → 回收: 第{{ item.target }}章
-                            </p>
+                            <span class="badge" :class="item.status === '已回收' ? 'badge-done' : 'badge-branch'">
+                                {{ item.status }}
+                            </span>
                         </div>
-                        <span class="badge" :class="item.status === '已回收' ? 'badge-done' : 'badge-branch'">
-                            {{ item.status }}
-                        </span>
                     </div>
                 </div>
             </div>
@@ -658,6 +702,28 @@
                     <div class="card card-light p-4 text-center">
                         <p class="text-2xl font-bold text-red-500">{{ reviewStats.min }}</p>
                         <p class="text-sm opacity-60">最低分</p>
+                    </div>
+                </div>
+                
+                <!-- 审查趋势图表 -->
+                <div v-if="reviewData.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card card-light p-4">
+                        <h3 class="font-bold mb-3"><i class="fas fa-chart-line mr-2 text-blue-500"></i>分数趋势</h3>
+                        <div style="height: 180px;">
+                            <canvas id="reviewScoreChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card card-light p-4">
+                        <h3 class="font-bold mb-3"><i class="fas fa-chart-pie mr-2 text-purple-500"></i>问题分布</h3>
+                        <div style="height: 180px;">
+                            <canvas id="reviewIssuesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="reviewData.length > 0 && reviewStats.latestDimensions" class="card card-light p-4">
+                    <h3 class="font-bold mb-3"><i class="fas fa-star mr-2 text-amber-500"></i>最近一次审查维度</h3>
+                    <div style="height: 200px;">
+                        <canvas id="reviewRadarChart"></canvas>
                     </div>
                 </div>
                 
@@ -824,6 +890,163 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 写作进度 -->
+            <div v-show="activeTab === 'progress'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-chart-bar mr-2 text-indigo-500"></i>写作进度</h2>
+                
+                <!-- 进度统计 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-indigo-600">{{ writingStats.totalChapters }}</p>
+                        <p class="text-sm opacity-60">已完成章节</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-600">{{ formatNumber(writingStats.totalWords) }}</p>
+                        <p class="text-sm opacity-60">总字数</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-green-600">{{ formatNumber(writingStats.avgWordsPerChapter) }}</p>
+                        <p class="text-sm opacity-60">平均字数/章</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-purple-600">{{ writingStats.completionRate }}%</p>
+                        <p class="text-sm opacity-60">目标完成率</p>
+                    </div>
+                </div>
+                
+                <!-- 字数曲线 -->
+                <div class="card card-light p-4 mb-4">
+                    <h3 class="font-bold mb-3"><i class="fas fa-chart-line mr-2 text-blue-500"></i>各章字数分布</h3>
+                    <div style="height: 200px;">
+                        <canvas id="wordCountChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 目标进度 -->
+                <div class="card card-light p-4">
+                    <h3 class="font-bold mb-3"><i class="fas fa-bullseye mr-2 text-red-500"></i>目标进度</h3>
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>当前: {{ formatNumber(progress.totalWords) }} 字</span>
+                            <span>目标: {{ formatNumber(project.targetWords) }} 字</span>
+                        </div>
+                        <div class="progress-bar" style="height: 12px;">
+                            <div class="progress-fill" :style="{ width: writingStats.completionRate + '%' }"></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="opacity-60">剩余字数</p>
+                            <p class="font-bold">{{ formatNumber(project.targetWords - progress.totalWords) }}</p>
+                        </div>
+                        <div>
+                            <p class="opacity-60">预计完本时间</p>
+                            <p class="font-bold">{{ progress.estimatedDays }} 天</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 章节速览 -->
+            <div v-show="activeTab === 'chapters'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-list-alt mr-2 text-teal-500"></i>章节速览</h2>
+                
+                <!-- 筛选器 -->
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <select v-model="chapterFilter.strand" class="px-3 py-2 rounded-lg border dark:bg-gray-700">
+                        <option value="all">全部类型</option>
+                        <option value="Quest">Quest</option>
+                        <option value="Fire">Fire</option>
+                        <option value="Constellation">Constellation</option>
+                    </select>
+                    <select v-model="chapterFilter.phase" class="px-3 py-2 rounded-lg border dark:bg-gray-700">
+                        <option value="all">全部阶段</option>
+                        <option value="before">末世前</option>
+                        <option value="post">末世后</option>
+                    </select>
+                </div>
+                
+                <!-- 章节卡片网格 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div v-for="ch in filteredChapters" :key="ch.chapter"
+                         class="card card-light p-4 cursor-pointer hover:shadow-lg"
+                         @click="showChapterDetail(ch)">
+                        <div class="flex items-start justify-between mb-2">
+                            <h4 class="font-bold">第{{ ch.chapter }}章</h4>
+                            <span class="badge text-xs" :class="getStrandBadgeClass(ch.strand)">{{ ch.strand }}</span>
+                        </div>
+                        <p class="text-sm font-medium mb-1">{{ ch.title }}</p>
+                        <p class="text-xs opacity-60 mb-2">{{ ch.storyTime }}</p>
+                        <div v-if="ch.wordCount" class="text-xs opacity-50">
+                            <i class="fas fa-file-word mr-1"></i>{{ ch.wordCount }} 字
+                        </div>
+                        <div v-if="ch.satisfaction" class="text-xs text-purple-500 mt-1 truncate">
+                            {{ ch.satisfaction }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 章节详情弹窗 -->
+                <div v-if="selectedChapter" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="selectedChapter = null">
+                    <div class="card card-light p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-bold">第{{ selectedChapter.chapter }}章 {{ selectedChapter.title }}</h3>
+                            <button @click="selectedChapter = null" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div><span class="opacity-60">时间:</span> {{ selectedChapter.storyTime }}</div>
+                            <div v-if="selectedChapter.timeAnchor"><span class="opacity-60">时间锚点:</span> {{ selectedChapter.timeAnchor }}</div>
+                            <div v-if="selectedChapter.strand"><span class="opacity-60">类型:</span> {{ selectedChapter.strand }}</div>
+                            <div v-if="selectedChapter.wordCount"><span class="opacity-60">字数:</span> {{ selectedChapter.wordCount }}</div>
+                            <div v-if="selectedChapter.satisfaction"><span class="opacity-60">爽点:</span> {{ selectedChapter.satisfaction }}</div>
+                            <div v-if="selectedChapter.keyEvents && selectedChapter.keyEvents.length > 0">
+                                <span class="opacity-60">关键事件:</span>
+                                <ul class="list-disc list-inside mt-1 ml-2">
+                                    <li v-for="(evt, i) in selectedChapter.keyEvents" :key="i">{{ evt }}</li>
+                                </ul>
+                            </div>
+                            <div v-if="selectedChapter.summary" class="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <p class="opacity-60 mb-1">摘要:</p>
+                                <p>{{ selectedChapter.summary }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 角色成长曲线 -->
+            <div v-show="activeTab === 'growth'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-chart-line mr-2 text-pink-500"></i>角色成长曲线</h2>
+                
+                <!-- 境界变化图表 -->
+                <div class="card card-light p-4 mb-4">
+                    <h3 class="font-bold mb-3"><i class="fas fa-level-up-alt mr-2 text-green-500"></i>境界变化</h3>
+                    <div style="height: 200px;">
+                        <canvas id="realmGrowthChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 关键事件时间线 -->
+                <div class="card card-light p-4">
+                    <h3 class="font-bold mb-3"><i class="fas fa-flag mr-2 text-amber-500"></i>关键事件</h3>
+                    <div class="space-y-3">
+                        <div v-for="event in keyEvents" :key="event.chapter"
+                             class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xs font-bold">{{ event.chapter }}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-sm">{{ event.title }}</p>
+                                <p class="text-xs opacity-60">{{ event.storyTime }}</p>
+                                <p v-if="event.events" class="text-xs opacity-80 mt-1">{{ event.events.join('；') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Footer -->
@@ -850,6 +1073,9 @@
                     { id: 'relationship', name: '角色图谱', icon: 'fas fa-project-diagram' },
                     { id: 'timeline', name: '时间线', icon: 'fas fa-clock' },
                     { id: 'factions', name: '势力版图', icon: 'fas fa-map-marked-alt' },
+                    { id: 'progress', name: '写作进度', icon: 'fas fa-chart-bar' },
+                    { id: 'chapters', name: '章节速览', icon: 'fas fa-list-alt' },
+                    { id: 'growth', name: '成长曲线', icon: 'fas fa-chart-line' },
                 ];
 
                 const project = ref({
@@ -983,6 +1209,8 @@
                 
                 // 审查数据
                 const reviewData = ref([]);
+                const reviewCharts = ref({ score: null, issues: null, radar: null });
+                
                 const reviewStats = computed(() => {
                     if (reviewData.value.length === 0) return null;
                     const scores = reviewData.value.filter(r => r.overall_score).map(r => r.overall_score);
@@ -990,6 +1218,10 @@
                     const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
                     const min = Math.min(...scores);
                     const max = Math.max(...scores);
+                    
+                    // 获取最近一次有维度分数的审查
+                    const latestWithDimensions = reviewData.value.find(r => r.dimension_scores && Object.keys(r.dimension_scores).length > 0);
+                    
                     return {
                         count: scores.length,
                         avg: avg.toFixed(1),
@@ -998,17 +1230,145 @@
                         totalReviewedChapters: reviewData.value.reduce((acc, r) => {
                             const match = r.chapters.match(/(\d+)/g);
                             return acc + (match ? match.length : 0);
-                        }, 0)
+                        }, 0),
+                        latestDimensions: latestWithDimensions?.dimension_scores || null
                     };
                 });
                 
+                // 初始化审查图表
+                const initReviewCharts = () => {
+                    if (reviewData.value.length === 0) return;
+                    
+                    // 分数趋势折线图
+                    const scoreCtx = document.getElementById('reviewScoreChart');
+                    if (scoreCtx) {
+                        if (reviewCharts.value.score) reviewCharts.value.score.destroy();
+                        
+                        const scoreData = reviewData.value
+                            .filter(r => r.overall_score)
+                            .map(r => ({
+                                chapter: r.chapters,
+                                score: r.overall_score
+                            }));
+                        
+                        reviewCharts.value.score = new Chart(scoreCtx, {
+                            type: 'line',
+                            data: {
+                                labels: scoreData.map(d => `第${d.chapter}章`),
+                                datasets: [{
+                                    label: '综合评分',
+                                    data: scoreData.map(d => d.score),
+                                    borderColor: '#667eea',
+                                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    y: { min: 0, max: 100 }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 问题分布饼图
+                    const issuesCtx = document.getElementById('reviewIssuesChart');
+                    if (issuesCtx) {
+                        if (reviewCharts.value.issues) reviewCharts.value.issues.destroy();
+                        
+                        const totalIssues = reviewData.value.reduce((acc, r) => {
+                            if (r.severity_counts) {
+                                acc.critical += r.severity_counts.critical || 0;
+                                acc.high += r.severity_counts.high || 0;
+                                acc.medium += r.severity_counts.medium || 0;
+                                acc.low += r.severity_counts.low || 0;
+                            }
+                            return acc;
+                        }, { critical: 0, high: 0, medium: 0, low: 0 });
+                        
+                        reviewCharts.value.issues = new Chart(issuesCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['严重', '高', '中', '低'],
+                                datasets: [{
+                                    data: [totalIssues.critical, totalIssues.high, totalIssues.medium, totalIssues.low],
+                                    backgroundColor: ['#ef4444', '#f97316', '#eab308', '#3b82f6']
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 维度雷达图
+                    const radarCtx = document.getElementById('reviewRadarChart');
+                    if (radarCtx && reviewStats.value?.latestDimensions) {
+                        if (reviewCharts.value.radar) reviewCharts.value.radar.destroy();
+                        
+                        const dims = reviewStats.value.latestDimensions;
+                        reviewCharts.value.radar = new Chart(radarCtx, {
+                            type: 'radar',
+                            data: {
+                                labels: Object.keys(dims),
+                                datasets: [{
+                                    label: '维度得分',
+                                    data: Object.values(dims),
+                                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                                    borderColor: '#667eea',
+                                    pointBackgroundColor: '#667eea'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    r: { min: 0, max: 10 }
+                                }
+                            }
+                        });
+                    }
+                };
+                
                 const filteredForeshadowing = computed(() => {
-                    if (foreshadowFilter.value === 'all') return foreshadowing.value;
-                    if (foreshadowFilter.value === 'core') return foreshadowing.value.filter(f => f.tier === '核心');
-                    if (foreshadowFilter.value === 'branch') return foreshadowing.value.filter(f => f.tier === '支线');
-                    if (foreshadowFilter.value === 'undone') return foreshadowing.value.filter(f => f.status === '未回收');
-                    if (foreshadowFilter.value === 'done') return foreshadowing.value.filter(f => f.status === '已回收');
-                    return foreshadowing.value;
+                    let items = foreshadowing.value.map(f => {
+                        const chaptersLeft = f.target - progress.value.currentChapter;
+                        const progressPercent = progress.value.currentChapter >= f.target ? 100 : 
+                            Math.round(((progress.value.currentChapter - f.planted) / (f.target - f.planted)) * 100);
+                        return {
+                            ...f,
+                            progress: Math.min(Math.max(progressPercent, 0), 100),
+                            isUrgent: chaptersLeft <= 10 && f.status === '未回收',
+                            isOverdue: chaptersLeft < 0 && f.status === '未回收'
+                        };
+                    });
+                    
+                    if (foreshadowFilter.value === 'all') return items;
+                    if (foreshadowFilter.value === 'core') return items.filter(f => f.tier === '核心');
+                    if (foreshadowFilter.value === 'branch') return items.filter(f => f.tier === '支线');
+                    if (foreshadowFilter.value === 'undone') return items.filter(f => f.status === '未回收');
+                    if (foreshadowFilter.value === 'done') return items.filter(f => f.status === '已回收');
+                    if (foreshadowFilter.value === 'urgent') return items.filter(f => (f.isUrgent || f.isOverdue) && f.status === '未回收');
+                    return items;
+                });
+                
+                const foreshadowStats = computed(() => {
+                    const items = foreshadowing.value;
+                    const currentCh = progress.value.currentChapter;
+                    return {
+                        total: items.length,
+                        undone: items.filter(f => f.status === '未回收').length,
+                        done: items.filter(f => f.status === '已回收').length,
+                        urgent: items.filter(f => (f.target - currentCh <= 10) && f.status === '未回收').length
+                    };
                 });
 
                 const factions = ref([
@@ -1656,6 +2016,182 @@
                     }
                 };
 
+                // 写作进度统计
+                const writingStats = computed(() => {
+                    const chapters = Object.values(chapterMeta.value);
+                    const chaptersWithWords = chapters.filter(c => c.word_count);
+                    const totalWords = chaptersWithWords.reduce((acc, c) => acc + (c.word_count || 0), 0);
+                    const avgWords = chaptersWithWords.length > 0 ? Math.round(totalWords / chaptersWithWords.length) : 0;
+                    
+                    return {
+                        totalChapters: progress.value.currentChapter,
+                        totalWords: progress.value.totalWords,
+                        avgWordsPerChapter: avgWords,
+                        completionRate: Math.round((progress.value.totalWords / project.value.targetWords) * 100)
+                    };
+                });
+                
+                // 章节筛选
+                const chapterFilter = ref({ strand: 'all', phase: 'all' });
+                const selectedChapter = ref(null);
+                
+                const filteredChapters = computed(() => {
+                    const chapters = [];
+                    for (const [chNum, chData] of Object.entries(chapterMeta.value)) {
+                        const chapter = parseInt(chNum);
+                        if (chapter > progress.value.currentChapter) continue;
+                        
+                        // 解析时间阶段
+                        let phase = 'unknown';
+                        const countdown = chData.countdown || '';
+                        if (countdown.match(/D-?\d+/)) {
+                            phase = 'before';
+                        } else if (chData.time_anchor?.includes('末世')) {
+                            phase = 'post';
+                        }
+                        
+                        // 解析小说内时间
+                        let storyTime = '';
+                        const dMatch = countdown.match(/D(-?\d+)/);
+                        if (dMatch) {
+                            const days = parseInt(dMatch[1]);
+                            storyTime = days >= 0 ? `末世前${days}天` : `末世后${Math.abs(days)}天`;
+                        } else {
+                            const postMatch = chData.time_anchor?.match(/末世第(\d+)天/);
+                            if (postMatch) storyTime = `末世第${postMatch[1]}天`;
+                        }
+                        
+                        chapters.push({
+                            chapter,
+                            title: chData.title || `第${chapter}章`,
+                            strand: chData.strand || '',
+                            satisfaction: chData.satisfaction || '',
+                            wordCount: chData.word_count || null,
+                            timeAnchor: chData.time_anchor || '',
+                            keyEvents: chData.key_events || [],
+                            storyTime,
+                            phase
+                        });
+                    }
+                    
+                    return chapters.filter(ch => {
+                        if (chapterFilter.value.strand !== 'all' && ch.strand !== chapterFilter.value.strand) return false;
+                        if (chapterFilter.value.phase !== 'all' && ch.phase !== chapterFilter.value.phase) return false;
+                        return true;
+                    });
+                });
+                
+                // 关键事件列表
+                const keyEvents = computed(() => {
+                    return filteredChapters.value.filter(ch => ch.keyEvents && ch.keyEvents.length > 0).slice(0, 20);
+                });
+                
+                // 显示章节详情
+                const showChapterDetail = (ch) => {
+                    selectedChapter.value = ch;
+                };
+                
+                // 获取 Strand 徽章样式
+                const getStrandBadgeClass = (strand) => {
+                    switch(strand) {
+                        case 'Quest': return 'bg-blue-500 text-white';
+                        case 'Fire': return 'bg-orange-500 text-white';
+                        case 'Constellation': return 'bg-purple-500 text-white';
+                        default: return 'bg-gray-500 text-white';
+                    }
+                };
+                
+                // Chart.js 实例
+                const progressCharts = ref({ wordCount: null, realmGrowth: null });
+                
+                // 初始化写作进度图表
+                const initProgressCharts = () => {
+                    // 字数分布图
+                    const wordCtx = document.getElementById('wordCountChart');
+                    if (wordCtx) {
+                        if (progressCharts.value.wordCount) progressCharts.value.wordCount.destroy();
+                        
+                        const chapters = filteredChapters.value.filter(c => c.wordCount);
+                        
+                        progressCharts.value.wordCount = new Chart(wordCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: chapters.map(c => `第${c.chapter}章`),
+                                datasets: [{
+                                    label: '字数',
+                                    data: chapters.map(c => c.wordCount),
+                                    backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                                    borderColor: '#667eea',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    y: { beginAtZero: true }
+                                }
+                            }
+                        });
+                    }
+                };
+                
+                // 初始化成长曲线图表
+                const initGrowthCharts = () => {
+                    const realmCtx = document.getElementById('realmGrowthChart');
+                    if (realmCtx) {
+                        if (progressCharts.value.realmGrowth) progressCharts.value.realmGrowth.destroy();
+                        
+                        // 境界映射
+                        const realmMap = { '感气': 1, '引气': 2, '筑基': 3, '开光': 4, '融合': 5, '辟谷': 6, '金丹': 7, '元婴': 8, '化神': 9 };
+                        const currentRealmNum = realmMap[protagonist.value.realm.replace(/[初中后]期|前期|中期|后期|大圆满/g, '')] || 1;
+                        
+                        // 模拟境界变化数据（实际应从 chapter_meta 提取）
+                        const realmData = [];
+                        for (let i = 1; i <= progress.value.currentChapter; i++) {
+                            // 简化：根据章节号推算境界
+                            let realm = 1;
+                            if (i >= 3) realm = 1.2; // 感气初期
+                            if (i >= 10) realm = 1.5;
+                            if (i >= 20) realm = 1.8;
+                            if (i >= 29) realm = 2; // 感气中期
+                            if (i >= 32) realm = 2.2;
+                            realmData.push({ chapter: i, realm });
+                        }
+                        
+                        progressCharts.value.realmGrowth = new Chart(realmCtx, {
+                            type: 'line',
+                            data: {
+                                labels: realmData.map(d => `第${d.chapter}章`),
+                                datasets: [{
+                                    label: '境界',
+                                    data: realmData.map(d => d.realm),
+                                    borderColor: '#f43f5e',
+                                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    y: {
+                                        ticks: {
+                                            callback: (value) => {
+                                                const realms = ['', '感气', '引气', '筑基', '开光', '融合', '辟谷', '金丹', '元婴', '化神'];
+                                                return realms[Math.floor(value)] || '';
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                };
+
                 onMounted(() => {
                     let savedTheme = 'light';
                     try {
@@ -1680,6 +2216,15 @@
                             if (activeTab.value === 'timeline') {
                                 initTimeline();
                             }
+                            if (activeTab.value === 'review') {
+                                initReviewCharts();
+                            }
+                            if (activeTab.value === 'progress') {
+                                initProgressCharts();
+                            }
+                            if (activeTab.value === 'growth') {
+                                initGrowthCharts();
+                            }
                         }, 500);
                     });
                 });
@@ -1693,6 +2238,15 @@
                             }
                             if (newTab === 'timeline') {
                                 initTimeline();
+                            }
+                            if (newTab === 'review') {
+                                initReviewCharts();
+                            }
+                            if (newTab === 'progress') {
+                                initProgressCharts();
+                            }
+                            if (newTab === 'growth') {
+                                initGrowthCharts();
                             }
                         }, 300);
                     });
@@ -1765,9 +2319,17 @@
                     foreshadowing,
                     foreshadowFilter,
                     filteredForeshadowing,
+                    foreshadowStats,
                     reviewData,
                     reviewStats,
                     factions,
+                    writingStats,
+                    chapterFilter,
+                    selectedChapter,
+                    filteredChapters,
+                    keyEvents,
+                    showChapterDetail,
+                    getStrandBadgeClass,
                     lastUpdated,
                     toggleTheme,
                     refreshData,
