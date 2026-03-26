@@ -1,0 +1,30 @@
+[
+  {
+    "name": "地摊老人",
+    "category": "次要角色",
+    "role": "疑似遗迹守望者 / 古书其他传承者",
+    "firstAppearance": "第1章（D-60，地摊）",
+    "realm": null
+  },
+  {
+    "name": "防空洞守夜人",
+    "category": "次要角色",
+    "role": "疑似遗迹守望者成员",
+    "firstAppearance": "第9章（D-52，防空洞外）",
+    "realm": null
+  },
+  {
+    "name": "掠夺者团伙",
+    "category": "反派角色",
+    "role": "末世后形成的武装掠夺团体",
+    "firstAppearance": "",
+    "realm": null
+  },
+  {
+    "name": "蓝色影子",
+    "category": "反派角色",
+    "role": "未知（末世中的神秘存在）",
+    "firstAppearance": "第15章（D-46，陈默预知苏雨命运时看到）",
+    "realm": null
+  }
+]

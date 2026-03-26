@@ -158,17 +158,19 @@ def default_chapter_draft_path(project_root: Path, chapter_num: int, *, use_volu
         chapter_num: 章节号
         use_volume_layout: True 使用卷布局，False 使用平坦布局，None 自动检测（默认）
 
-    Default is auto-detect: 如果存在 "正文/第1卷/" 目录则使用卷布局，否则使用平坦布局。
+    自动检测：检查是否存在 "正文/第N卷/" 目录。
     如果详细大纲已有章节标题，会附加到文件名中以提高可发现性。
     """
     # 自动检测布局偏好
     if use_volume_layout is None:
-        # 检查是否存在卷目录（任意卷即可）
-        vol_dir = chapters_dir = project_root / "正文"
-        for item in chapters_dir.iterdir() if chapters_dir.exists() else []:
-            if item.is_dir() and item.name.startswith("第") and "卷" in item.name:
-                use_volume_layout = True
-                break
+        chapters_dir = project_root / "正文"
+        if chapters_dir.exists():
+            for item in chapters_dir.iterdir():
+                if item.is_dir() and "卷" in item.name:
+                    use_volume_layout = True
+                    break
+            else:
+                use_volume_layout = False
         else:
             use_volume_layout = False
 

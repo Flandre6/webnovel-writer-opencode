@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小说架构看板</title>
+    <title>小说架构看板 - 末世降临</title>
     
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -487,17 +487,29 @@
                 
                 <!-- 其他角色 -->
                 <div v-if="otherCharacters.length > 0">
-                    <h3 class="text-lg font-bold mb-3"><i class="fas fa-user-friends mr-2 text-green-500"></i>其他角色</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <div v-for="char in otherCharacters" :key="char.name"
-                             class="card card-light p-3 border border-green-200 dark:border-green-800">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
-                                    <i class="fas fa-user text-green-600 dark:text-green-400"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <h4 class="font-bold text-sm truncate">{{ char.name }}</h4>
-                                    <p class="text-xs opacity-60 truncate">{{ char.role }}</p>
+                    <h3 class="text-lg font-bold mb-3"><i class="fas fa-user-friends mr-2 text-green-500"></i>其他角色 ({{ otherCharacters.length }})</h3>
+                    
+                    <!-- 按类别分组显示 -->
+                    <div v-for="category in ['主要角色', '次要角色', '反派角色']" :key="category">
+                        <div v-if="getCharactersByCategory(category).length > 0" class="mb-4">
+                            <h4 class="text-sm font-medium mb-2 opacity-70">
+                                <i :class="getCategoryIcon(category)" class="mr-1"></i>{{ category }}
+                            </h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div v-for="char in getCharactersByCategory(category)" :key="char.name"
+                                     class="card card-light p-3 border"
+                                     :class="getCategoryBorderClass(category)">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                             :class="getCategoryBgClass(category)">
+                                            <i :class="getCategoryIcon(category)" class="text-white"></i>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <h4 class="font-bold text-sm truncate">{{ char.name }}</h4>
+                                            <p class="text-xs opacity-60 truncate">{{ char.role || char.category }}</p>
+                                            <p v-if="char.realm" class="text-xs text-purple-500 truncate">{{ char.realm }}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -547,9 +559,40 @@
                     <h3 class="text-lg font-bold mb-4"><i class="fas fa-bolt mr-2 text-yellow-500"></i>力量体系</h3>
                     <div class="flex flex-wrap gap-2">
                         <div v-for="(realm, index) in powerSystem" :key="index"
-                             class="px-4 py-2 rounded-full text-sm font-medium transition"
-                             :class="index <= currentRealmIndex ? 'gradient-bg text-white' : 'bg-gray-100 dark:bg-gray-700 opacity-50'">
+                             @click="selectedRealm = selectedRealm === realm ? null : realm"
+                             class="px-4 py-2 rounded-full text-sm font-medium transition cursor-pointer hover:scale-105"
+                             :class="[
+                                 index <= currentRealmIndex ? 'gradient-bg text-white' : 'bg-gray-100 dark:bg-gray-700 opacity-50',
+                                 selectedRealm === realm ? 'ring-2 ring-offset-2 ring-yellow-500' : ''
+                             ]">
                             {{ realm }}
+                        </div>
+                    </div>
+                    
+                    <!-- 筛选后的角色列表 -->
+                    <div v-if="selectedRealm" class="mt-4 pt-4 border-t dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-bold text-sm"><i class="fas fa-users mr-2 text-blue-500"></i>{{ selectedRealm }}境角色</h4>
+                            <button @click="selectedRealm = null" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                <i class="fas fa-times mr-1"></i>清除筛选
+                            </button>
+                        </div>
+                        <div v-if="filteredCharactersByRealm.length > 0" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <div v-for="char in filteredCharactersByRealm" :key="char.name"
+                                 class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                     :class="char.isProtagonist ? 'gradient-bg' : 'bg-gradient-to-br from-pink-500 to-rose-500'">
+                                    {{ char.name[0] }}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-medium text-sm truncate">{{ char.name }}</p>
+                                    <p class="text-xs opacity-60 truncate">{{ char.realm }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-center py-4">
+                            <p class="text-sm opacity-60">暂无{{ selectedRealm }}境角色</p>
+                            <p class="text-xs opacity-40 mt-1">当前有境界的角色：{{ charactersWithRealm }}</p>
                         </div>
                     </div>
                 </div>
@@ -675,7 +718,57 @@
             <!-- 角色关系图谱 -->
             <div v-show="activeTab === 'relationship'" class="fade-in">
                 <h2 class="text-xl font-bold mb-4"><i class="fas fa-project-diagram mr-2 text-pink-500"></i>角色关系图谱</h2>
-                <div class="card card-light p-4" style="height: 600px;">
+                
+                <!-- 图例 -->
+                <div class="card card-light p-3 mb-4">
+                    <div class="flex flex-wrap gap-4 text-xs">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-purple-500"></div>
+                            <span>主角</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-pink-500"></div>
+                            <span>女主</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-green-500"></div>
+                            <span>主要角色</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-slate-500"></div>
+                            <span>次要角色</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-red-500"></div>
+                            <span>反派</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-amber-500"></div>
+                            <span>地点</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-4 rounded-full bg-violet-500"></div>
+                            <span>物品</span>
+                        </div>
+                        <div class="border-l pl-4 ml-2 flex items-center gap-4">
+                            <div class="flex items-center gap-1">
+                                <div class="w-6 h-0.5 bg-pink-500"></div>
+                                <span>羁绊</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-6 h-0.5 bg-red-500 border-dashed" style="border-bottom: 2px dashed #ef4444;"></div>
+                                <span>敌对</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-6 h-0.5 bg-amber-500"></div>
+                                <span>所在</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs opacity-50 mt-2">提示：滚轮缩放，拖拽移动节点</p>
+                </div>
+                
+                <div class="card card-light p-4" style="height: 550px;">
                     <div id="relationship-graph" class="w-full h-full"></div>
                 </div>
             </div>
@@ -683,8 +776,28 @@
             <!-- 故事时间线 -->
             <div v-show="activeTab === 'timeline'" class="fade-in">
                 <h2 class="text-xl font-bold mb-4"><i class="fas fa-clock mr-2 text-indigo-500"></i>故事时间线</h2>
+                
+                <!-- 阶段图例 -->
+                <div class="card card-light p-3 mb-4">
+                    <div class="flex flex-wrap gap-4 text-xs">
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-1 rounded bg-green-500"></div>
+                            <span>末世前（D-60 ~ D-1）</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-1 rounded bg-amber-500"></div>
+                            <span>末世降临（D-0）</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-4 h-1 rounded bg-red-500"></div>
+                            <span>末世后（D+1 ~）</span>
+                        </div>
+                    </div>
+                    <p class="text-xs opacity-50 mt-2">提示：滚轮缩放时间轴，拖拽移动</p>
+                </div>
+                
                 <div class="card card-light p-4">
-                    <div id="timeline" class="w-full" style="height: 400px;"></div>
+                    <div id="timeline" class="w-full" style="height: 420px;"></div>
                 </div>
             </div>
 
@@ -766,7 +879,8 @@
                     name: '苏雨',
                     role: '医学生',
                     affection: 30,
-                    firstChapter: 11
+                    firstChapter: 11,
+                    realm: '普通人'
                 });
                 
                 const otherCharacters = ref([]);
@@ -777,8 +891,64 @@
                     '感气', '引气', '筑基', '开光', '融合', '辟谷', '金丹', '元婴', '化神'
                 ]);
 
+                const selectedRealm = ref(null);
+
                 const currentRealmIndex = computed(() => {
                     return powerSystem.value.indexOf(protagonist.value.realm.replace('期', ''));
+                });
+
+                const filteredCharactersByRealm = computed(() => {
+                    if (!selectedRealm.value) return [];
+                    
+                    const chars = [];
+                    // 检查主角
+                    const protagonistRealm = protagonist.value.realm.replace('期', '').replace('前', '').replace('后', '');
+                    if (protagonistRealm === selectedRealm.value || protagonist.value.realm.includes(selectedRealm.value)) {
+                        chars.push({
+                            name: protagonist.value.name,
+                            realm: protagonist.value.realm,
+                            isProtagonist: true
+                        });
+                    }
+                    // 检查女主
+                    if (heroine.value.realm) {
+                        const heroineRealm = heroine.value.realm.replace('期', '').replace('前', '').replace('后', '');
+                        if (heroineRealm === selectedRealm.value || heroine.value.realm.includes(selectedRealm.value)) {
+                            chars.push({
+                                name: heroine.value.name,
+                                realm: heroine.value.realm,
+                                isProtagonist: false
+                            });
+                        }
+                    }
+                    // 检查其他角色
+                    for (const char of otherCharacters.value) {
+                        if (char.realm) {
+                            const charRealm = char.realm.replace('期', '').replace('前', '').replace('后', '');
+                            if (charRealm === selectedRealm.value || char.realm.includes(selectedRealm.value)) {
+                                chars.push({
+                                    name: char.name,
+                                    realm: char.realm,
+                                    isProtagonist: false
+                                });
+                            }
+                        }
+                    }
+                    return chars;
+                });
+
+                const charactersWithRealm = computed(() => {
+                    const chars = [];
+                    chars.push(`${protagonist.value.name}(${protagonist.value.realm})`);
+                    if (heroine.value.realm && heroine.value.realm !== '普通人') {
+                        chars.push(`${heroine.value.name}(${heroine.value.realm})`);
+                    }
+                    for (const char of otherCharacters.value) {
+                        if (char.realm) {
+                            chars.push(`${char.name}(${char.realm})`);
+                        }
+                    }
+                    return chars.join('、') || '暂无';
                 });
 
                 const volumes = ref([
@@ -1012,6 +1182,29 @@
                             locations.value = locs;
                             items.value = itms;
                         }
+                        
+                        // 从角色库加载角色
+                        try {
+                            const charLibResponse = await fetch('characters.json');
+                            if (charLibResponse.ok) {
+                                const libChars = await charLibResponse.json();
+                                // 合并角色库中的角色（避免重复）
+                                const existingNames = new Set(otherCharacters.value.map(c => c.name));
+                                for (const char of libChars) {
+                                    if (!existingNames.has(char.name)) {
+                                        otherCharacters.value.push({
+                                            name: char.name,
+                                            role: char.role || char.category,
+                                            realm: char.realm,
+                                            firstAppearance: char.firstAppearance,
+                                            category: char.category
+                                        });
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.log('Failed to load character library:', e);
+                        }
 
                         if (data.plot_threads && data.plot_threads.foreshadowing) {
                             foreshadowing.value = data.plot_threads.foreshadowing.map(f => ({
@@ -1141,27 +1334,60 @@
                     // 确保容器有有效尺寸
                     const rawWidth = parent.clientWidth;
                     const rawHeight = parent.clientHeight;
-                    const width = Math.max(rawWidth - 32, 400); // 最小宽度400
-                    const height = Math.max(rawHeight - 32, 300); // 最小高度300
+                    const width = Math.max(rawWidth - 32, 400);
+                    const height = Math.max(rawHeight - 32, 300);
                     
-                    const nodes = [
-                        { id: '陈默', group: 1, radius: 35 },
-                        { id: '苏雨', group: 2, radius: 25 },
-                        { id: '《洞天要术》', group: 3, radius: 25 },
-                        { id: '临渊塔', group: 3, radius: 20 },
-                        { id: '防空洞', group: 3, radius: 15 },
-                        { id: '上古遗迹', group: 3, radius: 20 },
-                        { id: '守渊者', group: 4, radius: 20 },
-                    ];
+                    // 动态构建节点和关系
+                    const nodes = [];
+                    const links = [];
+                    const nodeMap = new Set();
                     
-                    const links = [
-                        { source: '陈默', target: '苏雨', type: 'love' },
-                        { source: '陈默', target: '《洞天要术》', type: 'own' },
-                        { source: '陈默', target: '临渊塔', type: 'location' },
-                        { source: '陈默', target: '防空洞', type: 'location' },
-                        { source: '临渊塔', target: '上古遗迹', type: 'contain' },
-                        { source: '《洞天要术》', target: '守渊者', type: 'enemy' },
-                    ];
+                    // 添加主角
+                    nodes.push({ id: protagonist.value.name, group: 'protagonist', radius: 40, realm: protagonist.value.realm });
+                    nodeMap.add(protagonist.value.name);
+                    
+                    // 添加女主
+                    if (heroine.value.name) {
+                        nodes.push({ id: heroine.value.name, group: 'heroine', radius: 30, role: heroine.value.role });
+                        nodeMap.add(heroine.value.name);
+                        links.push({ source: protagonist.value.name, target: heroine.value.name, type: 'love', label: '羁绊' });
+                    }
+                    
+                    // 添加其他角色
+                    for (const char of otherCharacters.value) {
+                        if (!nodeMap.has(char.name)) {
+                            const group = char.category === '反派角色' ? 'villain' : (char.category === '主要角色' ? 'main' : 'support');
+                            nodes.push({ id: char.name, group, radius: group === 'villain' ? 25 : 20, role: char.role });
+                            nodeMap.add(char.name);
+                            // 反派与主角的敌对关系
+                            if (group === 'villain') {
+                                links.push({ source: protagonist.value.name, target: char.name, type: 'enemy', label: '敌对' });
+                            }
+                        }
+                    }
+                    
+                    // 添加地点
+                    for (const loc of locations.value) {
+                        if (!nodeMap.has(loc.name)) {
+                            nodes.push({ id: loc.name, group: 'location', radius: 18, role: loc.role });
+                            nodeMap.add(loc.name);
+                            links.push({ source: protagonist.value.name, target: loc.name, type: 'location', label: '所在' });
+                        }
+                    }
+                    
+                    // 添加物品
+                    for (const item of items.value) {
+                        if (!nodeMap.has(item.name)) {
+                            nodes.push({ id: item.name, group: 'item', radius: 15, role: item.role });
+                            nodeMap.add(item.name);
+                            links.push({ source: protagonist.value.name, target: item.name, type: 'own', label: '拥有' });
+                        }
+                    }
+                    
+                    // 特殊关系：临渊塔与上古遗迹
+                    if (nodeMap.has('临渊塔') && nodeMap.has('上古遗迹')) {
+                        links.push({ source: '临渊塔', target: '上古遗迹', type: 'contain', label: '包含' });
+                    }
 
                     container.innerHTML = '';
                     
@@ -1169,23 +1395,63 @@
                         .append('svg')
                         .attr('width', width)
                         .attr('height', height);
+                    
+                    // 添加缩放功能
+                    const g = svg.append('g');
+                    svg.call(d3.zoom()
+                        .scaleExtent([0.3, 3])
+                        .on('zoom', (event) => {
+                            g.attr('transform', event.transform);
+                        }));
+
+                    // 颜色方案
+                    const colorMap = {
+                        protagonist: '#667eea',
+                        heroine: '#f43f5e',
+                        main: '#10b981',
+                        support: '#64748b',
+                        villain: '#ef4444',
+                        location: '#f59e0b',
+                        item: '#8b5cf6'
+                    };
+
+                    // 关系线颜色
+                    const linkColorMap = {
+                        love: '#f43f5e',
+                        enemy: '#ef4444',
+                        location: '#f59e0b',
+                        own: '#8b5cf6',
+                        contain: '#10b981'
+                    };
 
                     const simulation = d3.forceSimulation(nodes)
-                        .force('link', d3.forceLink(links).id(d => d.id).distance(100))
-                        .force('charge', d3.forceManyBody().strength(-300))
+                        .force('link', d3.forceLink(links).id(d => d.id).distance(120))
+                        .force('charge', d3.forceManyBody().strength(-400))
                         .force('center', d3.forceCenter(width / 2, height / 2))
-                        .force('collision', d3.forceCollide().radius(d => d.radius + 10));
+                        .force('collision', d3.forceCollide().radius(d => d.radius + 15));
 
-                    const link = svg.append('g')
+                    // 绘制连线
+                    const link = g.append('g')
                         .selectAll('line')
                         .data(links)
                         .enter().append('line')
-                        .attr('class', 'link')
-                        .attr('stroke', d => d.type === 'love' ? '#f43f5e' : '#94a3b8')
+                        .attr('stroke', d => linkColorMap[d.type] || '#94a3b8')
                         .attr('stroke-width', d => d.type === 'love' ? 3 : 2)
-                        .attr('stroke-dasharray', d => d.type === 'enemy' ? '5,5' : 'none');
+                        .attr('stroke-dasharray', d => d.type === 'enemy' ? '5,5' : 'none')
+                        .attr('opacity', 0.7);
 
-                    const node = svg.append('g')
+                    // 添加关系标签
+                    const linkLabel = g.append('g')
+                        .selectAll('text')
+                        .data(links)
+                        .enter().append('text')
+                        .attr('font-size', '10px')
+                        .attr('fill', '#94a3b8')
+                        .attr('text-anchor', 'middle')
+                        .text(d => d.label);
+
+                    // 绘制节点
+                    const node = g.append('g')
                         .selectAll('g')
                         .data(nodes)
                         .enter().append('g')
@@ -1195,20 +1461,30 @@
                             .on('drag', dragged)
                             .on('end', dragended));
 
+                    // 节点圆形
                     node.append('circle')
                         .attr('r', d => d.radius)
-                        .attr('fill', d => {
-                            const colors = ['#667eea', '#f43f5e', '#10b981', '#f59e0b'];
-                            return colors[d.group - 1] || '#94a3b8';
-                        })
+                        .attr('fill', d => colorMap[d.group] || '#94a3b8')
                         .attr('stroke', '#fff')
-                        .attr('stroke-width', 2);
+                        .attr('stroke-width', 2)
+                        .attr('opacity', 0.9);
 
+                    // 节点内文字（首字）
+                    node.append('text')
+                        .attr('text-anchor', 'middle')
+                        .attr('dy', '0.35em')
+                        .attr('fill', '#fff')
+                        .attr('font-size', d => Math.max(d.radius * 0.6, 12) + 'px')
+                        .attr('font-weight', 'bold')
+                        .text(d => d.id.charAt(0));
+
+                    // 节点名称标签
                     node.append('text')
                         .attr('class', 'node-label')
                         .attr('text-anchor', 'middle')
-                        .attr('dy', d => d.radius + 15)
+                        .attr('dy', d => d.radius + 14)
                         .attr('fill', isDark.value ? '#e2e8f0' : '#1e293b')
+                        .attr('font-size', '11px')
                         .text(d => d.id);
 
                     simulation.on('tick', () => {
@@ -1217,6 +1493,10 @@
                             .attr('y1', d => d.source.y)
                             .attr('x2', d => d.target.x)
                             .attr('y2', d => d.target.y);
+
+                        linkLabel
+                            .attr('x', d => (d.source.x + d.target.x) / 2)
+                            .attr('y', d => (d.source.y + d.target.y) / 2);
 
                         node.attr('transform', d => `translate(${d.x},${d.y})`);
                     });
@@ -1239,7 +1519,7 @@
                     }
                 };
 
-                // Initialize Timeline
+                // Initialize Timeline - 使用小说内时间
                 const initTimeline = () => {
                     const container = document.getElementById('timeline');
                     if (!container) return;
@@ -1247,53 +1527,89 @@
                     // 清除已有内容
                     container.innerHTML = '';
 
-                    // 使用已加载的时间线数据，或从 chapterMeta 重新构建
-                    let timelineItems = timelineData.value;
-                    
-                    // 如果没有预加载数据，从 chapterMeta 构建
-                    if (timelineItems.length === 0 && Object.keys(chapterMeta.value).length > 0) {
-                        const baseDate = new Date('2024-01-01');
-                        const chapters = chapterMeta.value;
-                        
-                        for (const [chNum, chData] of Object.entries(chapters)) {
-                            const chapter = parseInt(chNum);
-                            if (chapter > 31) break;
-                            
-                            const countdown = chData.countdown || '';
-                            let dayOffset = 0;
-                            
-                            const match = countdown.match(/D(-?\d+)/);
-                            if (match) {
-                                dayOffset = parseInt(match[1]);
-                                const eventDate = new Date(baseDate);
-                                eventDate.setDate(baseDate.getDate() + dayOffset + 60);
-                                
-                                timelineItems.push({
-                                    id: chapter,
-                                    content: chData.title || `第${chapter}章`,
-                                    start: eventDate,
-                                    chapter: chapter,
-                                    timeAnchor: chData.time_anchor || countdown,
-                                    satisfaction: chData.satisfaction || ''
-                                });
-                            }
+                    // 解析小说内时间
+                    const parseStoryTime = (timeAnchor, countdown, chapter) => {
+                        // 末世前时间：D-60 表示末世前60天
+                        const dMatch = countdown?.match(/D(-?\d+)/);
+                        if (dMatch) {
+                            const days = parseInt(dMatch[1]);
+                            return {
+                                label: days >= 0 ? `末世前${days}天` : `末世后${Math.abs(days)}天`,
+                                order: days,
+                                phase: days > 0 ? 'before' : 'after'
+                            };
                         }
-                        timelineItems.sort((a, b) => a.chapter - b.chapter);
+                        
+                        // 末世后时间：末世第X天
+                        const postMatch = timeAnchor?.match(/末世第(\d+)天/);
+                        if (postMatch) {
+                            const days = parseInt(postMatch[1]);
+                            return {
+                                label: `末世第${days}天`,
+                                order: -days,
+                                phase: 'post'
+                            };
+                        }
+                        
+                        // 默认使用章节序号
+                        return {
+                            label: `第${chapter}章`,
+                            order: chapter,
+                            phase: 'unknown'
+                        };
+                    };
+
+                    // 从 chapterMeta 构建时间线数据
+                    const timelineItems = [];
+                    const chapters = chapterMeta.value;
+                    
+                    for (const [chNum, chData] of Object.entries(chapters)) {
+                        const chapter = parseInt(chNum);
+                        if (chapter > 31) break;
+                        
+                        const timeInfo = parseStoryTime(
+                            chData.time_anchor || '',
+                            chData.countdown || '',
+                            chapter
+                        );
+                        
+                        // 使用虚拟日期来排列（基于小说内时间顺序）
+                        const virtualDate = new Date('2024-01-01');
+                        virtualDate.setDate(virtualDate.getDate() + timeInfo.order + 100);
+                        
+                        timelineItems.push({
+                            id: chapter,
+                            content: chData.title || `第${chapter}章`,
+                            start: virtualDate,
+                            chapter: chapter,
+                            storyTime: timeInfo.label,
+                            timeAnchor: chData.time_anchor || '',
+                            satisfaction: chData.satisfaction || '',
+                            phase: timeInfo.phase
+                        });
                     }
+                    
+                    timelineItems.sort((a, b) => a.chapter - b.chapter);
 
                     // 如果没有数据，使用默认
                     const items = new vis.DataSet(timelineItems.length > 0 ? timelineItems : [
-                        { id: 1, content: '第1章 地摊买书', start: new Date('2024-01-01'), timeAnchor: 'D-60 → D-59' },
-                        { id: 2, content: '第2章 修炼与准备', start: new Date('2024-01-02'), timeAnchor: 'D-59 → D-58' },
-                        { id: 3, content: '第3章 滴血认主', start: new Date('2024-01-03'), timeAnchor: 'D-58' },
-                        { id: 29, content: '第29章 感气中期', start: new Date('2024-01-30'), timeAnchor: '末世第5天' },
-                        { id: 30, content: '第30章 遗迹入口', start: new Date('2024-01-31'), timeAnchor: '末世第6天' },
-                        { id: 31, content: '第31章 探索古书', start: new Date('2024-02-01'), timeAnchor: '末世第6天傍晚至第7天早上' },
+                        { id: 1, content: '第1章 地摊买书', start: new Date('2024-04-01'), storyTime: '末世前60天' },
+                        { id: 31, content: '第31章 探索古书', start: new Date('2024-05-31'), storyTime: '末世第7天' },
                     ]);
 
+                    // 阶段颜色
+                    const getPhaseColor = (phase) => {
+                        switch(phase) {
+                            case 'before': return '#10b981';  // 末世前：绿色
+                            case 'after': return '#f59e0b';   // 末世初期：橙色
+                            case 'post': return '#ef4444';    // 末世后：红色
+                            default: return '#667eea';
+                        }
+                    };
+
                     // 计算时间范围
-                    let minDate = new Date('2024-01-01');
-                    let maxDate = new Date('2024-02-10');
+                    let minDate = new Date('2024-03-01');
+                    let maxDate = new Date('2024-07-01');
                     
                     if (items.length > 0) {
                         const dates = items.get().map(item => new Date(item.start));
@@ -1303,24 +1619,38 @@
                         maxDate.setDate(maxDate.getDate() + 5);
                     }
 
-                    // 简化配置 - 使用默认格式，时间信息显示在事件标签中
                     const options = {
-                        height: '360px',
+                        height: '400px',
                         start: minDate,
                         end: maxDate,
                         zoomMin: 1000 * 60 * 60 * 24 * 3,
-                        zoomMax: 1000 * 60 * 60 * 24 * 60,
+                        zoomMax: 1000 * 60 * 60 * 24 * 100,
                         orientation: 'top',
+                        showCurrentTime: false,
+                        format: {
+                            minorLabels: () => '',
+                            majorLabels: () => ''
+                        },
                         template: function(item, element, data) {
-                            return `<div class="timeline-item" style="padding: 4px 8px; white-space: nowrap;">
+                            const phaseColor = getPhaseColor(data.phase);
+                            return `<div class="timeline-item" style="padding: 6px 10px; border-left: 3px solid ${phaseColor}; background: ${phaseColor}15; border-radius: 4px;">
                                 <div class="font-bold text-sm">${data.content}</div>
-                                <div class="text-xs" style="color: #667eea;">${data.timeAnchor}</div>
+                                <div class="text-xs mt-1" style="color: ${phaseColor}; font-weight: 600;">
+                                    <i class="fas fa-clock mr-1"></i>${data.storyTime}
+                                </div>
                             </div>`;
                         }
                     };
 
                     try {
-                        new vis.Timeline(container, items, options);
+                        const timeline = new vis.Timeline(container, items, options);
+                        
+                        // 添加阶段标签
+                        const phases = [
+                            { label: '末世前', color: '#10b981' },
+                            { label: '末世降临', color: '#f59e0b' },
+                            { label: '末世后', color: '#ef4444' }
+                        ];
                     } catch (e) {
                         console.error('Timeline init error:', e);
                     }
@@ -1378,6 +1708,38 @@
                     });
                 });
 
+                // 角色分类辅助函数
+                const getCharactersByCategory = (category) => {
+                    return otherCharacters.value.filter(c => c.category === category);
+                };
+                
+                const getCategoryIcon = (category) => {
+                    switch(category) {
+                        case '主要角色': return 'fas fa-star text-yellow-500';
+                        case '次要角色': return 'fas fa-user text-blue-500';
+                        case '反派角色': return 'fas fa-skull text-red-500';
+                        default: return 'fas fa-user';
+                    }
+                };
+                
+                const getCategoryBorderClass = (category) => {
+                    switch(category) {
+                        case '主要角色': return 'border-yellow-200 dark:border-yellow-800';
+                        case '次要角色': return 'border-blue-200 dark:border-blue-800';
+                        case '反派角色': return 'border-red-200 dark:border-red-800';
+                        default: return 'border-green-200 dark:border-green-800';
+                    }
+                };
+                
+                const getCategoryBgClass = (category) => {
+                    switch(category) {
+                        case '主要角色': return 'bg-yellow-500';
+                        case '次要角色': return 'bg-blue-500';
+                        case '反派角色': return 'bg-red-500';
+                        default: return 'bg-green-500';
+                    }
+                };
+
                 return {
                     isDark,
                     loading,
@@ -1391,7 +1753,14 @@
                     locations,
                     items,
                     powerSystem,
+                    selectedRealm,
                     currentRealmIndex,
+                    filteredCharactersByRealm,
+                    charactersWithRealm,
+                    getCharactersByCategory,
+                    getCategoryIcon,
+                    getCategoryBorderClass,
+                    getCategoryBgClass,
                     volumes: volumesComputed,
                     foreshadowing,
                     foreshadowFilter,
