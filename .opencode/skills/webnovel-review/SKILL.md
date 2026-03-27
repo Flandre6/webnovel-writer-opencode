@@ -1,209 +1,111 @@
 ---
 name: webnovel-review
-description: 使用审查代理审查章节质量并生成报告。当用户要求章节审查或执行/webnovel-review时使用。
+description: 审查章节质量并生成报告。用于用户说"审查第X章"、"质量报告"、"章节检查"时，或执行/webnovel-review命令。调用审查代理执行设定一致性、连贯性、人物OOC、追读力等多维检查，产出带评分的审查报告和改进建议。配合--full执行完整审查（包含节奏、爽点检查），--range指定章节范围。
 allowed-tools: Read Grep Write Edit Bash Task AskUserQuestion
 ---
 
-# Quality Review Skill
+# 网文审查 Skill
 
-## Project Root Guard（必须先确认）
+## 快速参考
 
-- 必须先解析真实书项目根（必须包含 `.webnovel/state.json`），后续所有读写路径都以该目录为准。
+| 参数 | 说明 |
+|------|------|
+| `--full` | 完整审查（包含节奏、爽点检查） |
+| `--range 1-5` | 审查指定章节范围 |
 
-环境设置（bash 命令执行前）：
-```bash
-export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
+**产出**：`审查报告/第X-Y章审查报告.md`、`review_metrics` 落库
 
-# 获取 skill 所在目录
-export SKILL_ROOT="$(cd "$(dirname "$0")" && pwd)"
-# OpenCode 中 scripts 在 .opencode/scripts/
-export SCRIPTS_DIR="${SKILL_ROOT}/../../scripts"
+## 核心约束
 
-export PROJECT_ROOT="$(python "${SCRIPTS_DIR}/webnovel.py" --project-root "${WORKSPACE_ROOT}" where)"
-```
+- **审查深度**：Core（默认4项）vs Full（+节奏/爽点）
+- **critical 问题**：必须用 AskUserQuestion 询问用户处理方式
+- **审查指标**：必须落库（index.db）
 
-## 0.5 工作流断点（best-effort，不得阻断主流程）
+## 执行流程
 
-> 目标：让 `/webnovel-resume` 能基于真实断点恢复。即使 workflow_manager 出错，也**只记录警告**，审查继续。
+### Step 1：加载参考
 
-推荐（bash）：
-```bash
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow start-task --command webnovel-review --chapter {end} || true
-```
-
-Step 映射（必须与 `workflow_manager.py get_pending_steps("webnovel-review")` 对齐）：
-- Step 1：加载参考
-- Step 2：加载项目状态
-- Step 3：并行调用检查员
-- Step 4：生成审查报告
-- Step 5：保存审查指标到 index.db
-- Step 6：写回审查记录到 state.json
-- Step 7：处理关键问题（AskUserQuestion）
-- Step 8：收尾（完成任务）
-
-Step 记录模板（bash，失败不阻断）：
-```bash
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow start-step --step-id "Step 1" --step-name "加载参考" || true
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow complete-step --step-id "Step 1" --artifacts '{"ok":true}' || true
-```
-
-## Review depth
-
-- **Core (default)**: consistency / continuity / ooc / reader-pull
-- **Full (关键章/用户要求)**: core + high-point + pacing
-
-## Step 1: 加载参考（按需）
-
-## References（按步骤导航）
-
-- Step 1（必读，硬约束）：[core-constraints.md](../../references/shared/core-constraints.md)
-- Step 1（可选，Full 或节奏/爽点相关问题）：[cool-points-guide.md](../../references/shared/cool-points-guide.md)
-- Step 1（可选，Full 或节奏/爽点相关问题）：[strand-weave-pattern.md](../../references/shared/strand-weave-pattern.md)
-- Step 1（可选，仅在返工建议需要时）：[common-mistakes.md](references/common-mistakes.md)
-- Step 1（可选，仅在返工建议需要时）：[pacing-control.md](references/pacing-control.md)
-
-## Reference Loading Levels (strict, lazy)
-
-- L0: 先确定审查深度（Core / Full），再加载参考。
-- L1: 只加载 References 区的“必读”条目。
-- L2: 仅在问题定位需要时加载 References 区的“可选”条目。
-
-**必读**:
 ```bash
 cat "${SKILL_ROOT}/../../references/shared/core-constraints.md"
 ```
 
-**建议（Full 或需要时）**:
-```bash
-cat "${SKILL_ROOT}/../../references/shared/cool-points-guide.md"
-cat "${SKILL_ROOT}/../../references/shared/strand-weave-pattern.md"
-```
-
-**可选**:
-```bash
-cat "${SKILL_ROOT}/references/common-mistakes.md"
-cat "${SKILL_ROOT}/references/pacing-control.md"
-```
-
-## Step 2: 加载项目状态（若存在）
+### Step 2：加载项目状态
 
 ```bash
 cat "$PROJECT_ROOT/.webnovel/state.json"
 ```
 
-## Step 3: 并行调用检查员（Task）
+### Step 3：调用审查器
 
-#### 3.1 确定审查深度
-
-**审查深度**：
-- **Core（默认）**：执行核心审查器（category: core）
-- **Full**：执行核心 + 条件审查器（category: conditional）
-
-执行前加载审查器配置：
+**动态加载审查器**（从 registry.yaml）：
 ```bash
-# Core 审查器
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --category core --format json
-
-# Full 模式
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --mode full --format json
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --mode {standard|minimal|full} --format json
 ```
 
-#### 3.2 调用审查器（关键）
+**审查器分类**：
+- `core`：始终执行
+- `conditional`：满足触发条件时执行
 
-**审查器配置来源**：`../../checkers/registry.yaml`
+**Task 调用**：使用 registry.yaml 中的 `invoke_template` 调用各审查器
 
-**⚠️ 重要约束**：
-- 必须让 OpenCode 加载 agent 文件的完整定义
-- **不要**在 prompt 中包含具体检查项、JSON 模板、评分标准
-- prompt 中只传递必要参数（章节号、文件路径、项目根）
-
-**Task 调用模板**：
-```
-并行调用审查器（使用 Task 工具）：
-
-Task 1:
-  - agent/subagent: consistency-checker
-  - prompt: |
-      对第 {chapter} 章执行设定一致性审查。
-      - 章节文件：{chapter_file}
-      - 项目根：{PROJECT_ROOT}
-      - 审查器定义见：.opencode/agents/consistency-checker.md
-
-Task 2:
-  - agent/subagent: continuity-checker
-  - prompt: |
-      对第 {chapter} 章执行连贯性审查。
-      - 章节文件：{chapter_file}
-      - 项目根：{PROJECT_ROOT}
-      - 审查器定义见：.opencode/agents/continuity-checker.md
-
-Task 3:
-  - agent/subagent: ooc-checker
-  - prompt: |
-      对第 {chapter} 章执行人物OOC审查。
-      - 章节文件：{chapter_file}
-      - 项目根：{PROJECT_ROOT}
-      - 审查器定义见：.opencode/agents/ooc-checker.md
-
-（其他审查器按同样方式调用）
-```
-
-#### 3.3 审查器输出格式约束
-
-所有审查器必须返回符合 schema.yaml 的统一格式：
-
+**审查器输出格式**：
 ```json
 {
   "agent": "审查器ID",
   "chapter": 章节号,
   "overall_score": 0-100,
   "pass": true/false,
-  "issues": [
-    {
-      "id": "ISSUE_001",
-      "type": "问题类型",
-      "severity": "critical|high|medium|low",
-      "description": "问题描述",
-      "location": "位置",
-      "suggestion": "修复建议"
-    }
-  ],
-  "metrics": {...},
+  "issues": [{"severity": "critical|high|medium|low", "description": "...", "suggestion": "..."}],
   "summary": "一句话总结"
 }
 ```
 
-**字段统一性要求**：
-- ✅ 使用 `overall_score`（不是 `score`）
-- ✅ `severity` 使用 `critical/high/medium/low`（全小写）
-
-## Step 4: 生成审查报告
+### Step 4：生成审查报告
 
 保存到：`审查报告/第{start}-{end}章审查报告.md`
 
-**报告结构（精简版）**:
 ```markdown
 # 第 {start}-{end} 章质量审查报告
 
 ## 综合评分
 - 爽点密度 / 设定一致性 / 节奏控制 / 人物塑造 / 连贯性 / 追读力
-- 总评与等级
 
 ## 修改优先级
 - 🔴 高优先级（必须修改）
 - 🟠 中优先级（建议修改）
-- 🟡 低优先级（可选优化）
-
-## 改进建议
-- 可执行的修复建议
 ```
 
-**审查指标 JSON（用于趋势统计）**:
+### Step 5：保存审查指标
+
+```bash
+python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" index save-review-metrics --data '@review_metrics.json'
+```
+
+### Step 6：写回 state.json
+
+```bash
+python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" update-state -- --add-review "{start}-{end}" "审查报告/第{start}-{end}章审查报告.md"
+```
+
+### Step 7：处理 critical 问题
+
+如 `severity_counts.critical > 0`，使用 AskUserQuestion 询问：
+- A) 立即修复（推荐）
+- B) 仅保存报告，稍后处理
+
+### Step 8：收尾
+
+```bash
+python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow complete-task --artifacts '{"ok":true}' || true
+```
+
+## 审查指标 JSON 格式
+
 ```json
 {
-  "start_chapter": {start},
-  "end_chapter": {end},
-  "overall_score": 48,
+  "start_chapter": 1,
+  "end_chapter": 5,
+  "overall_score": 75,
   "dimension_scores": {
     "爽点密度": 8,
     "设定一致性": 7,
@@ -212,45 +114,11 @@ Task 3:
     "连贯性": 9,
     "追读力": 9
   },
-  "severity_counts": {"critical": 1, "high": 2, "medium": 3, "low": 1},
-  "critical_issues": ["设定自相矛盾"],
-  "report_file": "审查报告/第{start}-{end}章审查报告.md",
-  "notes": ""
+  "severity_counts": {"critical": 0, "high": 2, "medium": 3, "low": 1}
 }
 ```
 
-注意：此处只生成审查指标 JSON；落库见 Step 5。
+## 验证
 
-## Step 5: 保存审查指标到 index.db（必做）
-
-```bash
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" index save-review-metrics --data '@review_metrics.json'
-```
-
-## Step 6: 写回审查记录到 state.json（必做）
-
-将审查报告记录写回 `state.json.review_checkpoints`，用于后续追踪与回溯（依赖 `update_state.py --add-review`）：
-```bash
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" update-state -- --add-review "{start}-{end}" "审查报告/第{start}-{end}章审查报告.md"
-```
-
-## Step 7: 处理关键问题
-
-如发现 critical 问题（`severity_counts.critical > 0` 或 `critical_issues` 非空），**必须使用 AskUserQuestion** 询问用户：
-- A) 立即修复（推荐）
-- B) 仅保存报告，稍后处理
-
-若用户选择 A：
-- 输出“返工清单”（逐条 critical 问题 → 定位 → 最小修复动作 → 注意事项）
-- 如用户明确授权可直接修改正文文件，则用 `Edit` 对对应章节文件做最小修复，并建议重新运行一次 `/webnovel-review` 验证
-
-若用户选择 B：
-- 不做正文修改，仅保留审查报告与指标记录，结束本次审查
-
-## Step 8: 收尾（完成任务）
-
-```bash
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow start-step --step-id "Step 8" --step-name "收尾" || true
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow complete-step --step-id "Step 8" --artifacts '{"ok":true}' || true
-python "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" workflow complete-task --artifacts '{"ok":true}' || true
-```
+- 审查报告文件存在
+- review_metrics 已落库

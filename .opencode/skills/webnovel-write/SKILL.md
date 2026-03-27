@@ -81,11 +81,21 @@ PROJECT_ROOT="$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${WO
 
 ### Step 3：审查
 
-调用审查器（Task）：
-- 核心审查器：consistency-checker、continuity-checker、ooc-checker
-- 条件审查器：reader-pull-checker、high-point-checker、pacing-checker
+**动态加载审查器**（从 registry.yaml）：
+```bash
+python -X utf8 "${SCRIPTS_DIR}/webnovel.py" checkers list --mode {standard|minimal|full} --format json
+```
 
-**要求**：必须由 Task 子代理执行，critical > 0 则修复后才能进入 Step 4。
+**审查器配置**：
+- `core`：始终执行（consistency-checker、continuity-checker、ooc-checker）
+- `conditional`：满足触发条件时执行（reader-pull-checker、high-point-checker、pacing-checker）
+
+**执行规则**：
+1. 加载 registry.yaml 获取审查器列表和分类
+2. 根据模式（standard/minimal/full）确定应执行的审查器
+3. 使用 Task 并行调用各审查器
+4. 审查器输出必须符合 schema.yaml 格式
+5. critical > 0 则修复后才能进入 Step 4
 
 ### Step 4：润色
 
