@@ -387,20 +387,92 @@
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
+        <!-- Navigation Tabs - Apple Style Segmented Control -->
         <div class="max-w-7xl mx-auto px-6">
-            <div class="flex gap-2 overflow-x-auto pb-4">
-                <div v-for="tab in tabs" :key="tab.id" 
-                     @click="activeTab = tab.id"
-                     class="nav-tab whitespace-nowrap"
-                     :class="{ active: activeTab === tab.id }">
-                    <i :class="tab.icon" class="mr-2"></i>{{ tab.name }}
+            <div class="flex justify-center mb-6">
+                <div class="inline-flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 overflow-x-auto max-w-full relative">
+                    <button v-for="tab in tabs" :key="tab.id" 
+                         @click="tab.id === 'more' ? toggleMoreMenu() : (activeTab = tab.id)"
+                         class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap"
+                         :class="activeTab === tab.id 
+                             ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'">
+                        <i :class="tab.icon" class="text-xs"></i>
+                        <span>{{ tab.name }}</span>
+                    </button>
+                    <!-- 更多下拉菜单 -->
+                    <div v-if="showMoreMenu" 
+                         class="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border dark:border-gray-700 p-2 z-50 min-w-[160px]"
+                         @click.stop>
+                        <button v-for="item in moreTabs" :key="item.id"
+                                @click="activeTab = item.id; showMoreMenu = false"
+                                class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition hover:bg-gray-100 dark:hover:bg-gray-700"
+                                :class="activeTab === item.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'">
+                            <i :class="item.icon" class="text-xs w-4"></i>
+                            <span>{{ item.name }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="max-w-7xl mx-auto px-6 py-6">
+            <!-- 总览 -->
+            <div v-show="activeTab === 'overview'" class="fade-in">
+                <h2 class="text-xl font-bold mb-6"><i class="fas fa-home mr-2 text-blue-500"></i>总览</h2>
+                
+                <!-- 核心统计 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="card card-light p-5 text-center cursor-pointer hover:shadow-lg transition" @click="activeTab = 'chapters'">
+                        <p class="text-3xl font-bold text-blue-600">{{ progress.currentChapter }}</p>
+                        <p class="text-sm opacity-60">已完成章节</p>
+                    </div>
+                    <div class="card card-light p-5 text-center cursor-pointer hover:shadow-lg transition" @click="activeTab = 'writing'">
+                        <p class="text-3xl font-bold text-green-600">{{ formatNumber(progress.totalWords) }}</p>
+                        <p class="text-sm opacity-60">总字数</p>
+                    </div>
+                    <div class="card card-light p-5 text-center cursor-pointer hover:shadow-lg transition" @click="activeTab = 'foreshadow'">
+                        <p class="text-3xl font-bold text-amber-600">{{ foreshadowStats.undone }}</p>
+                        <p class="text-sm opacity-60">未回收伏笔</p>
+                    </div>
+                    <div class="card card-light p-5 text-center cursor-pointer hover:shadow-lg transition" @click="activeTab = 'characters'">
+                        <p class="text-3xl font-bold text-purple-600">{{ protagonist.realm }}</p>
+                        <p class="text-sm opacity-60">当前境界</p>
+                    </div>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="card card-light p-5 mb-6">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="font-medium">目标进度</span>
+                        <span class="opacity-60">{{ writingStats.completionRate }}%</span>
+                    </div>
+                    <div class="progress-bar" style="height: 8px;">
+                        <div class="progress-fill" :style="{ width: writingStats.completionRate + '%' }"></div>
+                    </div>
+                    <div class="flex justify-between text-xs opacity-60 mt-2">
+                        <span>{{ formatNumber(progress.totalWords) }} 字</span>
+                        <span>目标 {{ formatNumber(project.targetWords) }} 字</span>
+                    </div>
+                </div>
+                
+                <!-- 快捷入口 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div v-for="item in quickLinks" :key="item.id"
+                         @click="activeTab = item.id"
+                         class="card card-light p-4 cursor-pointer hover:shadow-lg transition flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" :class="item.bgColor">
+                            <i :class="item.icon" class="text-white"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm">{{ item.name }}</p>
+                            <p class="text-xs opacity-60">{{ item.desc }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- 卷结构 -->
             <div v-show="activeTab === 'volume'" class="space-y-4 fade-in">
                 <div class="flex items-center justify-between mb-4">
@@ -428,8 +500,8 @@
                 </div>
             </div>
 
-            <!-- 角色状态 -->
-            <div v-show="activeTab === 'protagonist'" class="space-y-4 fade-in">
+            <!-- 角色 -->
+            <div v-show="activeTab === 'protagonist'" class="fade-in">
                 <h2 class="text-xl font-bold mb-4"><i class="fas fa-users mr-2 text-blue-500"></i>角色状态</h2>
                 
                 <!-- 角色卡片列表 -->
@@ -442,25 +514,25 @@
                         <div class="flex items-start gap-4 mt-2">
                             <div class="w-16 h-16 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
                                 <span class="text-white text-2xl font-bold">{{ protagonist.name[0] }}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-xl font-bold mb-2">{{ protagonist.name }}</h3>
-                                <div class="grid grid-cols-2 gap-2 mb-2">
-                                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
-                                        <p class="text-xs opacity-60">境界</p>
-                                        <p class="font-bold text-purple-600 text-sm">{{ protagonist.realm }}</p>
-                                    </div>
-                                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
-                                        <p class="text-xs opacity-60">位置</p>
-                                        <p class="font-bold text-sm">{{ protagonist.location }}</p>
-                                    </div>
                                 </div>
-                                <p class="text-xs text-orange-600 truncate">{{ protagonist.goldenFinger }}</p>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-xl font-bold mb-2">{{ protagonist.name }}</h3>
+                                    <div class="grid grid-cols-2 gap-2 mb-2">
+                                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                            <p class="text-xs opacity-60">境界</p>
+                                            <p class="font-bold text-purple-600 text-sm">{{ protagonist.realm }}</p>
+                                        </div>
+                                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                                            <p class="text-xs opacity-60">位置</p>
+                                            <p class="font-bold text-sm">{{ protagonist.location }}</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-orange-600 truncate">{{ protagonist.goldenFinger }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- 女主 -->
+                        
+                        <!-- 女主 -->
                     <div class="card card-light p-5 border-2 border-pink-500 relative">
                         <div class="absolute -top-3 left-4 px-3 py-1 bg-pink-500 text-white text-xs font-bold rounded-full">
                             女主
@@ -510,10 +582,47 @@
                                             <h4 class="font-bold text-sm truncate">{{ char.name }}</h4>
                                             <p class="text-xs opacity-60 truncate">{{ char.role || char.category }}</p>
                                             <p v-if="char.realm" class="text-xs text-purple-500 truncate">{{ char.realm }}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 倒计时 -->
+            <div v-show="activeTab === 'countdown'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-hourglass-half mr-2 text-red-500"></i>倒计时追踪器</h2>
+                
+                <!-- 倒计时事件 -->
+                <div class="space-y-4">
+                    <div v-for="event in countdownEvents" :key="event.name"
+                         class="card card-light p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 class="font-bold">{{ event.name }}</h3>
+                                <p class="text-sm opacity-60">{{ event.description }}</p>
                             </div>
+                            <div class="text-right">
+                                <p class="text-3xl font-bold" :class="event.remaining <= 10 ? 'text-red-600' : 'text-blue-600'">
+                                    D-{{ event.remaining }}
+                                </p>
+                                <p class="text-xs opacity-60">{{ event.target }}</p>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="{ width: event.progress + '%' }"
+                                 :class="event.remaining <= 10 ? 'bg-red-500' : ''"></div>
+                        </div>
+                        <div class="flex justify-between text-xs opacity-60 mt-1">
+                            <span>起始: {{ event.start }}</span>
+                            <span>当前: {{ event.current }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="countdownEvents.length === 0" class="card card-light p-8 text-center opacity-60">
+                    <p>暂无倒计时事件</p>
+                    <p class="text-xs mt-1">从 chapter_meta 的 countdown 字段自动提取</p>
+                </div>
+            </div>
+        </div>
                         </div>
                     </div>
                 </div>
@@ -1047,6 +1156,229 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 实体词典 -->
+            <div v-show="activeTab === 'entities'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-book mr-2 text-purple-500"></i>实体词典</h2>
+                
+                <!-- 类型筛选 -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button @click="entityTypeFilter = ''" 
+                            class="px-3 py-1 rounded-full text-sm transition"
+                            :class="entityTypeFilter === '' ? 'gradient-bg text-white' : 'bg-gray-100 dark:bg-gray-700'">
+                        全部 ({{ entitiesList.length }})
+                    </button>
+                    <button v-for="type in entityTypes" :key="type"
+                            @click="entityTypeFilter = type"
+                            class="px-3 py-1 rounded-full text-sm transition"
+                            :class="entityTypeFilter === type ? 'gradient-bg text-white' : 'bg-gray-100 dark:bg-gray-700'">
+                        {{ type }} ({{ entitiesList.filter(e => e.type === type).length }})
+                    </button>
+                </div>
+                
+                <!-- 实体列表 -->
+                <div class="card card-light">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">名称</th>
+                                    <th class="px-4 py-3 text-left">类型</th>
+                                    <th class="px-4 py-3 text-left">层级</th>
+                                    <th class="px-4 py-3 text-left">首现章节</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="entity in filteredEntities" :key="entity.id"
+                                    class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                                    @click="selectedEntity = entity">
+                                    <td class="px-4 py-3 font-medium">
+                                        {{ entity.canonical_name }}
+                                        <span v-if="entity.is_protagonist" class="ml-1">⭐</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="badge text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                            {{ entity.type }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">{{ entity.tier || '-' }}</td>
+                                    <td class="px-4 py-3 opacity-60">第{{ entity.first_appearance || '-' }}章</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="entitiesList.length === 0" class="p-8 text-center opacity-60">
+                        <p>暂无实体数据</p>
+                        <p class="text-xs mt-1">需要先运行 data-agent 生成 index.db</p>
+                    </div>
+                </div>
+                
+                <!-- 实体详情弹窗 -->
+                <div v-if="selectedEntity" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="selectedEntity = null">
+                    <div class="card card-light p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-bold">{{ selectedEntity.canonical_name }}</h3>
+                            <button @click="selectedEntity = null" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div><span class="opacity-60">ID:</span> <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{ selectedEntity.id }}</code></div>
+                            <div><span class="opacity-60">类型:</span> {{ selectedEntity.type }}</div>
+                            <div v-if="selectedEntity.tier"><span class="opacity-60">层级:</span> {{ selectedEntity.tier }}</div>
+                            <!-- 状态变化历史 -->
+                            <div v-if="entityStateChanges.length > 0" class="mt-4">
+                                <p class="font-bold mb-2">状态变化历史</p>
+                                <div class="space-y-2">
+                                    <div v-for="(change, i) in entityStateChanges" :key="i"
+                                         class="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+                                        <span class="opacity-60">第{{ change.chapter }}章:</span>
+                                        {{ change.field }}: {{ change.old_value }} → {{ change.new_value }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 追读力 -->
+            <div v-show="activeTab === 'reading'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-fire mr-2 text-orange-500"></i>追读力分析</h2>
+                
+                <!-- 统计卡片 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-green-600">{{ readingPowerStats.strong }}</p>
+                        <p class="text-sm opacity-60">强钩子</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-amber-600">{{ readingPowerStats.medium }}</p>
+                        <p class="text-sm opacity-60">中钩子</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-red-600">{{ readingPowerStats.weak }}</p>
+                        <p class="text-sm opacity-60">弱钩子</p>
+                    </div>
+                    <div class="card card-light p-4 text-center">
+                        <p class="text-2xl font-bold text-purple-600">{{ readingPowerStats.transition }}</p>
+                        <p class="text-sm opacity-60">过渡章</p>
+                    </div>
+                </div>
+                
+                <!-- 追读力表格 -->
+                <div class="card card-light">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">章节</th>
+                                    <th class="px-4 py-3 text-left">钩子类型</th>
+                                    <th class="px-4 py-3 text-left">钩子强度</th>
+                                    <th class="px-4 py-3 text-left">过渡章</th>
+                                    <th class="px-4 py-3 text-left">债务余额</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in readingPowerData" :key="item.chapter"
+                                    class="border-t dark:border-gray-700">
+                                    <td class="px-4 py-3 font-medium">第{{ item.chapter }}章</td>
+                                    <td class="px-4 py-3">{{ item.hook_type || '-' }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="badge text-xs"
+                                              :class="{
+                                                  'bg-green-100 text-green-700': item.hook_strength === 'strong',
+                                                  'bg-amber-100 text-amber-700': item.hook_strength === 'medium',
+                                                  'bg-red-100 text-red-700': item.hook_strength === 'weak'
+                                              }">
+                                            {{ item.hook_strength || '-' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">{{ item.is_transition ? '✅' : '-' }}</td>
+                                    <td class="px-4 py-3" :class="(item.debt_balance || 0) > 0 ? 'text-red-600 font-bold' : ''">
+                                        {{ (item.debt_balance || 0).toFixed(2) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="readingPowerData.length === 0" class="p-8 text-center opacity-60">
+                        <p>暂无追读力数据</p>
+                        <p class="text-xs mt-1">需要先运行 data-agent 生成 chapter_reading_power 表</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 文档浏览 -->
+            <div v-show="activeTab === 'files'" class="fade-in">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-folder-open mr-2 text-yellow-500"></i>文档浏览</h2>
+                
+                <div class="flex gap-4" style="height: calc(100vh - 250px); min-height: 400px;">
+                    <!-- 文件树 -->
+                    <div class="card card-light p-4 w-64 overflow-y-auto flex-shrink-0">
+                        <div v-for="(items, folder) in fileTree" :key="folder" class="mb-4">
+                            <div class="font-bold text-sm mb-2">
+                                <i class="fas fa-folder mr-1 text-yellow-500"></i>{{ folder }}
+                            </div>
+                            <div v-for="item in items" :key="item.path">
+                                <div v-if="item.type === 'dir'" class="mb-1">
+                                    <div class="flex items-center gap-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
+                                         @click="toggleFolder(item.path)">
+                                        <i :class="expandedFolders[item.path] ? 'fas fa-folder-open' : 'fas fa-folder'" class="text-yellow-500 text-sm"></i>
+                                        <span class="text-sm">{{ item.name }}</span>
+                                    </div>
+                                    <div v-if="expandedFolders[item.path] && item.children" class="pl-4">
+                                        <div v-for="child in item.children" :key="child.path">
+                                            <div v-if="child.type === 'dir'" class="mb-1">
+                                                <div class="flex items-center gap-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded"
+                                                     @click="toggleFolder(child.path)">
+                                                    <i :class="expandedFolders[child.path] ? 'fas fa-folder-open' : 'fas fa-folder'" class="text-yellow-500 text-sm"></i>
+                                                    <span class="text-sm">{{ child.name }}</span>
+                                                </div>
+                                                <div v-if="expandedFolders[child.path] && child.children" class="pl-4">
+                                                    <div v-for="subchild in child.children" :key="subchild.path"
+                                                         class="flex items-center gap-1 cursor-pointer px-2 py-1 rounded text-sm"
+                                                         :class="selectedFilePath === subchild.path ? 'bg-blue-100 dark:bg-blue-900' : 'hover:bg-gray-100 dark:hover:bg-gray-700'"
+                                                         @click="loadFile(subchild.path)">
+                                                        <i class="fas fa-file-alt text-gray-400 text-xs"></i>
+                                                        <span>{{ subchild.name }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div v-else 
+                                                 class="flex items-center gap-1 cursor-pointer px-2 py-1 rounded text-sm"
+                                                 :class="selectedFilePath === child.path ? 'bg-blue-100 dark:bg-blue-900' : 'hover:bg-gray-100 dark:hover:bg-gray-700'"
+                                                 @click="loadFile(child.path)">
+                                                <i class="fas fa-file-alt text-gray-400 text-xs"></i>
+                                                <span>{{ child.name }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else 
+                                     class="flex items-center gap-1 cursor-pointer px-2 py-1 rounded text-sm"
+                                     :class="selectedFilePath === item.path ? 'bg-blue-100 dark:bg-blue-900' : 'hover:bg-gray-100 dark:hover:bg-gray-700'"
+                                     @click="loadFile(item.path)">
+                                    <i class="fas fa-file-alt text-gray-400 text-xs"></i>
+                                    <span>{{ item.name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 文件内容 -->
+                    <div class="card card-light p-4 flex-1 overflow-y-auto">
+                        <div v-if="selectedFilePath" class="mb-2">
+                            <span class="text-sm opacity-60">{{ selectedFilePath }}</span>
+                        </div>
+                        <pre v-if="fileContent" class="whitespace-pre-wrap text-sm font-mono">{{ fileContent }}</pre>
+                        <div v-else class="text-center opacity-60 py-20">
+                            <i class="fas fa-file-alt text-4xl mb-4"></i>
+                            <p>选择左侧文件以预览内容</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Footer -->
@@ -1066,17 +1398,25 @@
                 const foreshadowFilter = ref('all');
                 
                 const tabs = [
+                    { id: 'overview', name: '总览', icon: 'fas fa-home' },
                     { id: 'volume', name: '卷结构', icon: 'fas fa-layer-group' },
-                    { id: 'protagonist', name: '角色状态', icon: 'fas fa-users' },
-                    { id: 'foreshadow', name: '伏笔追踪', icon: 'fas fa-gem' },
-                    { id: 'review', name: '审查报告', icon: 'fas fa-clipboard-check' },
-                    { id: 'relationship', name: '角色图谱', icon: 'fas fa-project-diagram' },
+                    { id: 'protagonist', name: '角色', icon: 'fas fa-users' },
+                    { id: 'foreshadow', name: '伏笔', icon: 'fas fa-gem' },
+                    { id: 'review', name: '审查', icon: 'fas fa-clipboard-check' },
+                    { id: 'relationship', name: '图谱', icon: 'fas fa-project-diagram' },
                     { id: 'timeline', name: '时间线', icon: 'fas fa-clock' },
-                    { id: 'factions', name: '势力版图', icon: 'fas fa-map-marked-alt' },
-                    { id: 'progress', name: '写作进度', icon: 'fas fa-chart-bar' },
-                    { id: 'chapters', name: '章节速览', icon: 'fas fa-list-alt' },
-                    { id: 'growth', name: '成长曲线', icon: 'fas fa-chart-line' },
+                    { id: 'progress', name: '进度', icon: 'fas fa-chart-bar' },
+                    { id: 'chapters', name: '章节', icon: 'fas fa-list-alt' },
+                    { id: 'growth', name: '成长', icon: 'fas fa-chart-line' },
+                    { id: 'factions', name: '势力', icon: 'fas fa-map-marked-alt' },
+                    { id: 'entities', name: '实体', icon: 'fas fa-book' },
+                    { id: 'reading', name: '追读力', icon: 'fas fa-fire' },
+                    { id: 'files', name: '文档', icon: 'fas fa-folder-open' },
+                    { id: 'countdown', name: '倒计时', icon: 'fas fa-hourglass-half' },
                 ];
+                
+                // 二级标签（更多菜单）- 已禁用，直接显示所有标签
+                const moreTabs = [];
 
                 const project = ref({
                     title: '末世降临：我在地摊买了本成神指南',
@@ -2035,6 +2375,163 @@
                 const chapterFilter = ref({ strand: 'all', phase: 'all' });
                 const selectedChapter = ref(null);
                 
+                // 角色子标签
+                const characterSubTab = ref('main');
+                
+                // 实体词典
+                const entitiesList = ref([]);
+                const entityTypeFilter = ref('');
+                const selectedEntity = ref(null);
+                const entityStateChanges = ref([]);
+                
+                const entityTypes = computed(() => {
+                    return [...new Set(entitiesList.value.map(e => e.type))].sort();
+                });
+                
+                const filteredEntities = computed(() => {
+                    if (!entityTypeFilter.value) return entitiesList.value;
+                    return entitiesList.value.filter(e => e.type === entityTypeFilter.value);
+                });
+                
+                // 追读力
+                const readingPowerData = ref([]);
+                
+                const readingPowerStats = computed(() => {
+                    const data = readingPowerData.value;
+                    return {
+                        strong: data.filter(d => d.hook_strength === 'strong').length,
+                        medium: data.filter(d => d.hook_strength === 'medium').length,
+                        weak: data.filter(d => d.hook_strength === 'weak').length,
+                        transition: data.filter(d => d.is_transition).length
+                    };
+                });
+                
+                // 更多菜单
+                const showMoreMenu = ref(false);
+                const toggleMoreMenu = () => {
+                    showMoreMenu.value = !showMoreMenu.value;
+                };
+                
+                // 快捷入口
+                const quickLinks = [
+                    { id: 'volume', name: '卷结构', desc: '查看卷进度', icon: 'fas fa-layer-group', bgColor: 'bg-purple-500' },
+                    { id: 'chapters', name: '章节速览', desc: '浏览所有章节', icon: 'fas fa-list-alt', bgColor: 'bg-teal-500' },
+                    { id: 'characters', name: '角色管理', desc: '角色与实体', icon: 'fas fa-users', bgColor: 'bg-blue-500' },
+                    { id: 'foreshadow', name: '伏笔追踪', desc: '伏笔状态', icon: 'fas fa-gem', bgColor: 'bg-amber-500' },
+                    { id: 'timeline', name: '时间线', desc: '故事时间轴', icon: 'fas fa-clock', bgColor: 'bg-indigo-500' },
+                    { id: 'review', name: '审查报告', desc: '质量分析', icon: 'fas fa-clipboard-check', bgColor: 'bg-green-500' },
+                    { id: 'writing', name: '写作统计', desc: '进度与字数', icon: 'fas fa-pen', bgColor: 'bg-pink-500' },
+                    { id: 'files', name: '文档浏览', desc: '查看源文件', icon: 'fas fa-folder-open', bgColor: 'bg-yellow-500' },
+                ];
+                
+                // 文档浏览
+                const fileTree = ref({});
+                const selectedFilePath = ref('');
+                const fileContent = ref('');
+                const expandedFolders = ref({});
+                
+                const toggleFolder = (path) => {
+                    expandedFolders.value[path] = !expandedFolders.value[path];
+                };
+                
+                // 倒计时
+                const countdownEvents = computed(() => {
+                    const events = [];
+                    const chapters = chapterMeta.value;
+                    const currentCh = progress.value.currentChapter;
+                    
+                    for (const [chNum, chData] of Object.entries(chapters)) {
+                        const countdown = chData.countdown || '';
+                        const match = countdown.match(/D(-?\d+)/);
+                        if (match) {
+                            const days = parseInt(match[1]);
+                            if (days > 0 && days <= 60) {
+                                const progressPercent = Math.round(((60 - days) / 60) * 100);
+                                events.push({
+                                    name: chData.title || `第${chNum}章`,
+                                    description: chData.satisfaction || '',
+                                    start: 'D-60',
+                                    current: `D-${days}`,
+                                    target: 'D-0 (末世降临)',
+                                    remaining: days,
+                                    progress: progressPercent
+                                });
+                            }
+                        }
+                    }
+                    
+                    return events.sort((a, b) => a.remaining - b.remaining);
+                });
+                
+                // API 调用函数
+                const API_BASE = 'http://localhost:8086';
+                
+                const loadEntities = async () => {
+                    try {
+                        const resp = await fetch(`${API_BASE}/api/entities`);
+                        if (resp.ok) {
+                            entitiesList.value = await resp.json();
+                        }
+                    } catch (e) {
+                        console.log('Failed to load entities:', e);
+                    }
+                };
+                
+                const loadEntityStateChanges = async (entityId) => {
+                    try {
+                        const resp = await fetch(`${API_BASE}/api/state-changes?entity=${entityId}`);
+                        if (resp.ok) {
+                            entityStateChanges.value = await resp.json();
+                        }
+                    } catch (e) {
+                        console.log('Failed to load state changes:', e);
+                    }
+                };
+                
+                const loadReadingPower = async () => {
+                    try {
+                        const resp = await fetch(`${API_BASE}/api/reading-power`);
+                        if (resp.ok) {
+                            readingPowerData.value = await resp.json();
+                        }
+                    } catch (e) {
+                        console.log('Failed to load reading power:', e);
+                    }
+                };
+                
+                const loadFileTree = async () => {
+                    try {
+                        const resp = await fetch(`${API_BASE}/api/files/tree`);
+                        if (resp.ok) {
+                            fileTree.value = await resp.json();
+                        }
+                    } catch (e) {
+                        console.log('Failed to load file tree:', e);
+                    }
+                };
+                
+                const loadFile = async (path) => {
+                    selectedFilePath.value = path;
+                    try {
+                        const resp = await fetch(`${API_BASE}/api/files/read?path=${encodeURIComponent(path)}`);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            fileContent.value = data.content || '';
+                        }
+                    } catch (e) {
+                        fileContent.value = '读取失败';
+                    }
+                };
+                
+                // 格式化 JSON
+                const formatJSON = (str) => {
+                    try {
+                        return JSON.stringify(JSON.parse(str), null, 2);
+                    } catch {
+                        return str;
+                    }
+                };
+                
                 const filteredChapters = computed(() => {
                     const chapters = [];
                     for (const [chNum, chData] of Object.entries(chapterMeta.value)) {
@@ -2248,8 +2745,26 @@
                             if (newTab === 'growth') {
                                 initGrowthCharts();
                             }
+                            if (newTab === 'entities') {
+                                loadEntities();
+                            }
+                            if (newTab === 'reading') {
+                                loadReadingPower();
+                            }
+                            if (newTab === 'files') {
+                                loadFileTree();
+                            }
                         }, 300);
                     });
+                });
+                
+                // 监听实体选择变化
+                watch(selectedEntity, (entity) => {
+                    if (entity) {
+                        loadEntityStateChanges(entity.id);
+                    } else {
+                        entityStateChanges.value = [];
+                    }
                 });
                 
                 // 监听主题切换，重新初始化图表
@@ -2330,6 +2845,33 @@
                     keyEvents,
                     showChapterDetail,
                     getStrandBadgeClass,
+                    // 新增：实体词典
+                    characterSubTab,
+                    entitiesList,
+                    entityTypeFilter,
+                    entityTypes,
+                    filteredEntities,
+                    selectedEntity,
+                    entityStateChanges,
+                    // 新增：追读力
+                    readingPowerData,
+                    readingPowerStats,
+                    // 新增：文档浏览
+                    fileTree,
+                    selectedFilePath,
+                    fileContent,
+                    loadFile,
+                    expandedFolders,
+                    toggleFolder,
+                    // 新增：倒计时
+                    countdownEvents,
+                    // 新增：更多菜单
+                    moreTabs,
+                    showMoreMenu,
+                    toggleMoreMenu,
+                    quickLinks,
+                    // 工具函数
+                    formatJSON,
                     lastUpdated,
                     toggleTheme,
                     refreshData,
